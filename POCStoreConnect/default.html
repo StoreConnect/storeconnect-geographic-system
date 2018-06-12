@@ -1,0 +1,421 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body { margin:0; padding:0; }
+        #map { position:absolute; top:100px; bottom:0; width:100%; }
+    </style>
+</head>
+<body>
+
+    <div align="center">
+        <input type="text" id="apikey" size="40" value="" placeholder="put_api_key" />
+        <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id" />
+        <input type="button" value="Load venue" onclick="onLoadButtonClick()" /><br />
+        <input type="text" id="geojsonurl" size="100" value="" placeholder="geojson url" />
+        <input type="button" id="geojsonbtn" value="Load GeoJSON Points" onclick="onLoadGeoJSONButtonClick()" />
+        <input type="button" id="playbtn" value="Start" style="display:none" onclick="onPlayButtonClick()" />        
+    </div>
+
+    <div align="center" id="buttons">
+    </div>
+
+<div id='map'>
+
+</div>
+
+<script>
+// Change values according
+var apikey = location.search.substring(location.search.indexOf("=")+1);
+var baseurl = location.protocol + '//' + location.host;
+var map = null;
+var layerIds = [];
+var venueid = 0;
+var MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZnJhbmNrdCIsImEiOiJjaWpvamRoZGIwMDZidzFtMzVkMzQ5dWJ2In0.Blcw5mev30TMpmeXick_0g';
+var currentbuilding = '';
+var currentfloor = '';
+var timer = null;
+var markersToDisplay = {};
+var markers = {}; 
+markersToDisplay.type = "FeatureCollection";
+var markerIndex = 0;
+var nbMarkersToDisplay = 100;
+var start = 0;
+var playstatus = 0;
+document.getElementById('apikey').value = apikey;
+function onLoadButtonClick() {
+    apikey = document.getElementById('apikey').value;
+    venueid = document.getElementById('venueid').value;
+    // Load geolys venue
+    loadVenue(apikey, venueid, function(err, venue) {
+      console.log(venue);
+      if(venue && venue.styles) {
+        // Generate floor buttons
+        var buttons = document.getElementById('buttons');
+        buttons.innerHTML = '<button id="outdoor" onclick="changefloor()">Outdoor</button>';
+        for(var i=0; i<venue.buildings.length; i++) {
+            var b = venue.buildings[i];
+            for(var j=0; j<b.floors.length; j++) {
+                var f = b.floors[j];
+                var btn = document.createElement('button');
+                btn.innerHTML = (j==0 ? b.name + " : " : "") + f.floor;
+                btn.setAttribute('onclick', 'changefloor("' + b.id + '", "' + f.floor + '");');
+                buttons.appendChild(btn);
+            }
+        }
+        // Load venue GL style template
+        loadJSON(venue.styles +'?ts=' + new Date().getTime(), function(err, style) {
+            console.log(style);
+            if(style && venue.features) {
+                // load venue features
+                loadJSON(venue.features +'?ts=' + new Date().getTime(), function(err, features) {
+                    console.log(features);
+                    // Change venue source to geojson
+                    delete style.sources.venue.url; // Do not use tilejson venue url
+                    style.sources.venue.type = "geojson";
+                    style.sources.venue.data = features;
+                    style.sources.venue.maxzoom = 22;
+                    style.sources.venue.tolerance = 0.001;
+                    style.sources.venue.buffer = 256;            
+                    // Set urls to local server if not using mapbox source
+                    if(style.sources.composite.url.indexOf('mapbox://') == -1) {
+                        delete style.sources.composite.url; // Do not use tilejson url
+                        style.sources.composite.tiles = [ baseurl + "/basemap/{z}/{x}/{y}.pbf" ];
+                        style.sources.composite.maxzoom = 17;
+                        style.sources.composite.minzoom = 5;
+                    }
+                    style.sprite = style.sprite.replace("{baseurl}", baseurl);
+                    style.glyphs = style.glyphs.replace("{baseurl}", baseurl);
+                    // Save layers to set filter at runtime
+                    layerIds = [];
+                    for(var i=0; i<style.layers.length; i++) {
+                      var l = style.layers[i];
+                      if(l.id.indexOf('{location}') >= 0) {
+                        layerIds.push(l.id);
+                        if(l.type == "symbol") {
+                            l.layout["text-allow-overlap"] = false;
+                            l.layout["icon-allow-overlap"] = false;
+                        }
+                        l.layout["visibility"] = "visible";
+                        // Add paint style from paint location style
+                        l.paint = l["paint.{location}"];
+                      }
+                    }
+                    mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+                    // Add map
+                    map = new mapboxgl.Map({
+                        container: 'map', // container id
+                        style: style,
+                        minZoom: 14,
+                        maxZoom: 22,
+                        center: [ venue.defaultlon, venue.defaultlat ], // starting position
+                        zoom: venue.defaultzoom // starting zoom
+                    });
+                    //map.addControl(new mapboxgl.Navigation());
+                    map.on('style.load', function() {
+                    });
+                    // When a click event occurs near a marker icon, open a popup at the location of
+                    // the feature, with description HTML from its properties.
+                    map.on("click", function(e) {
+                        var features = map.queryRenderedFeatures(e.point, { layers: layerIds });
+                        if (!features.length) return;
+                        var feature = features[0];
+                        console.log(feature);
+                        new mapboxgl.Popup()
+                            .setLngLat(feature.geometry.coordinates)
+                            .setHTML(feature.properties.description)
+                            .addTo(map);
+                    });
+                    // Use the same approach as above to indicate that the symbols are clickable
+                    // by changing the cursor style to 'pointer'.
+                    map.on("mousemove", function(e) {
+/*                        var features = map.queryRenderedFeatures(e.point, { layers: [ 'markers'] });
+                        map.getCanvas().style.cursor = (!err && features.length) ? 'pointer' : '';
+*/                    });
+                });
+            }
+        });
+      }
+    });
+}
+function onLoadGeoJSONButtonClick() {
+    /*if(timer) {
+        clearInterval(timer);
+        document.getElementById('geojsonbtn').value = "Load GeoJSON Points";
+        timer = null;
+    }
+    else {
+        timer = setInterval(loadMarkersFunc, 2000);
+        document.getElementById('geojsonbtn').value = "Stop GeoJSON Points";
+    }*/
+    loadMarkersFunc();
+}
+function loadMarkersFunc() {
+    var geojsonurl = document.getElementById('geojsonurl').value;
+    loadMarkers(geojsonurl)
+}
+function applyFilters(b, f) {
+    // Check for building / floor dependant layer 
+    for(var i=0; i<layerIds.length; i++) {
+        // Get current filter
+        var _filter = map.getFilter(layerIds[i]);
+        // Create a new filter object
+        var fs = JSON.stringify(_filter);
+        var filter = JSON.parse(fs);
+        // Change filter values to match selected building / floor
+        for(var j=0; j<filter.length; j++) {
+            var filterpart = filter[j]; 
+            if(filterpart instanceof Array) {
+                if(filterpart.length >= 2) {
+                    if(filterpart[1].indexOf('locationbuilding') >= 0) {
+                        filterpart[2] = b;
+                    }
+                    else if(filterpart[1].indexOf('locationfloor') >= 0) {
+                        filterpart[2] = f;
+                    }                
+                }
+            }
+        }
+        // Apply filter to layer
+        map.setFilter(layerIds[i], filter);
+    } 
+}
+function changefloor(b, f) {
+    if(b == undefined) b = '';
+    if(f == undefined) f = '';
+    currentbuilding = b;
+    currentfloor = f;
+    applyFilters(currentbuilding, currentfloor);
+    // If outdoor, apply no classes
+    if(b == "") {
+        map.setClasses([]);
+    }
+    else {
+        // If indoor, apply indoor classes (used to hide some outdoor features if needed)
+        map.setClasses(["indoor"]);
+    }
+}
+function loadVenue(apikey, venueid, callback) {
+    var baseurl = "https://api.geolys.io/v1/venuesrevisions/";
+    var url = baseurl + "/" + venueid + "?api_key=" + apikey;
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.onerror = function(e) {
+        callback(e);
+    };
+    xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+            var data;
+            try {
+                data = JSON.parse(xhr.response);
+            } catch (err) {
+                return callback(err);
+            }
+            callback(null, data);
+        } else {
+            callback(xhr.statusText);
+        }
+    };
+    xhr.send();
+}
+function loadJSON(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.setRequestHeader('Accept', 'application/json');
+    xhr.onerror = function(e) {
+        callback(e);
+    };
+    xhr.onload = function() {
+        if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+            var data;
+            try {
+                data = JSON.parse(xhr.response);
+            } catch (err) {
+                return callback(err);
+            }
+            callback(null, data);
+        } else {
+            callback(xhr.statusText);
+        }
+    };
+    xhr.send();
+}
+function onPlayButtonClick() {
+    if(playstatus == 1) {
+        document.getElementById('playbtn').value = "Stopped";
+        playstatus = 0;
+    }
+    else {
+        playstatus = 1;
+        playFunc(0);
+    }
+}
+function resetPlay() {
+    playstatus = 0;
+    document.getElementById('playbtn').value = "Start";
+    document.getElementById('playbtn').style.display = "";
+    start = 0;
+    markerIndex = 0;
+}
+function playFunc(timestamp) {
+    if(playstatus == 0) return;
+    if(timestamp - start > 150) {
+        start = timestamp;
+        markerIndex += 1;
+        markerIndex = Math.min(markerIndex, markers.features.length - 1);
+        document.getElementById('playbtn').value = "Running (" + markerIndex + " / " + (markers.features.length - 1) + ")";
+        updateMarkersOnMap();
+    }
+    requestAnimationFrame(playFunc);
+}
+function updateMarkersOnMap() {
+    var currentTime = new Date();
+    var passTime = new Date();
+
+    //Find different id in the json
+    var tab_id = [];
+    for (var i=0; i<markers.features.length; i++) {
+        var f = markers.features[i];
+        if (f.geometry.type == "Point")
+        {
+            var dd = new Date(f.properties.devicedate);
+            if (dd <= passTime) passTime = dd;
+            if (!findID(tab_id, f.properties.appuserid))
+            {
+                tab_id.push(f.properties.appuserid);
+            }
+        }
+    }
+    currentTime = passTime;
+
+    console.log(tab_id);
+
+    //thinking code
+    markersToDisplay.features = [];
+    for (var i=0; i < tab_id.length; i++)
+    {
+        var index = 0;
+        var lastindex = 0;
+        for (var j = 0; j < markers.features.length; j++)
+        {
+            if (index == 0 && markers.features[j].properties.appuserid == tab_id[i])
+            {
+                index = j;
+                lastindex = findLastIndex(tab_id[i], j);
+                for (var k = index; k <= lastindex; k++)
+                {
+                    var s_date = new Date(markers.features[k].properties.devicedate);
+                    console.log(s_date + " " + passTime + " " + currentTime);
+                    if (s_date >= passTime) // && s_date <= currentTime)
+                    {
+                        if (k==lastindex) markers.features[k].properties.color = "#ff0000";
+                        else markers.features[k].properties.color = "#0000ff";
+                        markers.features[k].properties.opacity = (k - index + 1) / (lastindex - index + 1);
+                        markersToDisplay.features.push(markers.features[k]); 
+                    }
+                }
+                j = j + lastindex - index + 1;
+            }
+        }
+    }
+
+    // Update
+    map.getSource("markers").setData(markersToDisplay);
+}
+
+function findLastIndex(appuserid, feature_id)
+{
+    var save = 0;
+    for (var i = feature_id; i < markers.features.length; i++)
+    {
+        if (markers.features[i].properties.appuserid == appuserid)
+            save = i;
+    }
+    return save;
+}
+
+function findID(tab, appuserid)
+{
+    for (var i = 0; i<tab.length; i++)
+    {
+        if (tab[i] == appuserid)
+            return true;
+    }
+    return false;
+}
+
+function loadMarkers(url) {
+    loadJSON(url, function(err, _markers) {
+        console.log(_markers);
+        if(_markers) {
+            resetPlay();
+            markers = _markers;
+            // Flatten building and floor
+            for(var i=0; i<markers.features.length; i++) {
+                var f = markers.features[i];
+                f.properties.locationbuilding = f.properties.location.building;
+                f.properties.locationfloor = f.properties.location.floor;                
+            }
+
+            // Add layers in layers list
+            var found = false;
+            for(var i=0; i<layerIds.length; i++) {
+                if(layerIds[i] == "circles") {
+                    found = true;
+                    break;
+                }
+            }
+            if(found == false) layerIds.push("circles");
+
+            if(!map.getSource("markers")) {
+            console.log(markers);
+            map.addSource("markers", {
+                "type": "geojson",
+                "maxzoom": 22,
+                "data": markers
+            });
+
+            map.addLayer({
+                "id": "circles",
+                "type": "circle",
+                "source": "markers",
+                "filter":[ "all",
+                        [
+                         "==",
+                         "locationbuilding",
+                         "{building}"
+                         ],                 
+                        [
+                         "==",
+                         "locationfloor",
+                         "{floor}"
+                         ]
+                        ],
+                "paint": {
+                    "circle-radius": 3,
+                    "circle-color": {
+                        "property":"color",
+                        "type":"identity"
+                    },
+                    "circle-opacity": {
+                        "property":"opacity",
+                        "type":"identity"                            
+                    }
+                }
+            });
+            }
+        updateMarkersOnMap();                            
+        applyFilters(currentbuilding, currentfloor);
+        }
+    });
+}
+</script>
+
+</body>
+</html>
