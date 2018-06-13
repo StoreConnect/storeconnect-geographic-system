@@ -1,0 +1,43 @@
+html, body, .container-fluid {
+    height: 100%;
+}
+
+.sidebar{
+    border-right:1px solid rgba(0,0,0,0.15);
+}
+
+.ul-subject {
+    padding-left:0.5em;
+    list-style: none;
+}
+
+.ul-subject > li {
+    padding:0.5em;
+    transition:0.3s;
+}
+
+.ul-subject > li:hover, .ul-subject > li.active {
+    background: rgba(0,0,0,0.15);
+}
+
+.li-ds {
+
+}
+
+.li-ds-date {
+    font-size:10px;
+}
+
+.ul-subject-title {
+    width: 75%;
+    font-style: italic;
+    border-bottom: 1px solid #171a1d;
+    text-align: left;
+    text-indent: 0.25em;
+    margin-bottom: 0;
+}
+
+
+.loader-capteur, .loader-service {
+    display: none;
+}
