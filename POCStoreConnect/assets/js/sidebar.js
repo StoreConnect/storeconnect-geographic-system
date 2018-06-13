@@ -88,6 +88,8 @@ function loadMenu(dateFROM, dateTO) {
     let dt = moment(dateTO).add('2', 'hours').toISOString();
     let filter = "&$filter=during(%20phenomenonTime,%20" + df + "/" + dt + "%20)";
     fetch(API_OBSERVATIONS + filter, opt).then(res => res.json()).then(function (response) {
+        Observations = [];
+        obsBySubject = [];
         for (let item of response.value) {
             Observations.push(item);
         }
@@ -106,6 +108,8 @@ function loadMenu(dateFROM, dateTO) {
 
         createApiCapteurMenu(obsBySubject);
     });
+
+    //TODO: fetch API service
 
 }
 
@@ -173,6 +177,64 @@ function createApiCapteurMenu(items) {
 
 }
 
+function createApiServiceMenu(items) {
+    let menu = document.querySelector("#apiservicemenu");
+    let uls = [];
+
+    for (let item of Object.keys(items)) {
+        let ul = document.createElement('ul');
+        ul.setAttribute("class", "ul-subject");
+        let p = document.createElement("p");
+        p.setAttribute("class", "ul-subject-title");
+        p.appendChild(document.createTextNode(item));
+        ul.appendChild(p);
+
+        for (let datastream of Object.keys(items[item])) {
+            console.log(items[item][datastream][0].Datastream.phenomenonTime);
+            let li = document.createElement("li");
+
+            let datetimeF = items[item][datastream][0].Datastream.phenomenonTime.split("/")[0];
+            let datetimeT = items[item][datastream][0].Datastream.phenomenonTime.split("/")[1];
+
+            let spanDS = document.createElement("span");
+            spanDS.setAttribute("class", "li-ds");
+            spanDS.appendChild(document.createTextNode(datastream));
+
+            let spanDSDate = document.createElement("span");
+            spanDSDate.setAttribute("class", "li-ds-date");
+            spanDSDate.appendChild(document.createTextNode(" (" + datetimeF.substring(0, datetimeF.length - 8) + "-" + datetimeT.substring(0, datetimeT.length - 8) + ")"));
+
+            let color = colorFactory.getRandomColor();
+            let colorIcon = document.createElement("i");
+            colorIcon.setAttribute("class", "fas fa-square-full float-right pr-5");
+            colorIcon.style.color = color;
+
+            li.appendChild(spanDS);
+            li.appendChild(spanDSDate);
+            li.appendChild(colorIcon);
+
+            li.setAttribute("data-color", color);
+            li.setAttribute("data-datastream-id", items[item][datastream][0].Datastream["@iot.id"]);
+            li.setAttribute("data-subject-id", item);
+            li.style.cursor = "pointer";
+
+            li.onclick = function () {
+                apiServiceMenuClick(li);
+            };
+
+            ul.appendChild(li);
+        }
+
+        uls.push(ul);
+    }
+
+
+    for (let ul of uls) {
+        menu.appendChild(ul);
+    }
+
+    toggleLoaderService();
+}
 
 /**
  * Handle click on api capteur item
@@ -181,44 +243,60 @@ function createApiCapteurMenu(items) {
  */
 function apiCapteurMenuClick(el) {
     el.classList.toggle("active");
-    let endpoint = API_DATASTREAM.replace("[id]", el.getAttribute("data-datastream-id"));
-    let opt = {
-        method: 'GET',
-        headers: myHeaders,
-        mode: 'cors',
-        cache: 'default'
-    };
-    fetch(endpoint, opt).then(res => res.json()).then(function (response) {
-        let geojson = {};
-        geojson.type = "FeatureCollection";
-        geojson.color = el.getAttribute("data-color");
-        geojson.datastreamId = el.getAttribute("data-datastream-id");
-        geojson.subjectId = el.getAttribute("data-subject-id");
-        let data = [];
-        for (let item of response.value) {
-            //refilter by subject here for camera datastream
-            if (item.result.subject.id === el.getAttribute("data-subject-id")) {
-                let location = item.result.location;
-                data.push(location);
+
+    if (el.classList.contains("active")) {
+
+        let endpoint = API_DATASTREAM.replace("[id]", el.getAttribute("data-datastream-id"));
+        let opt = {
+            method: 'GET',
+            headers: myHeaders,
+            mode: 'cors',
+            cache: 'default'
+        };
+        fetch(endpoint, opt).then(res => res.json()).then(function (response) {
+            let geojson = {};
+            geojson.type = "FeatureCollection";
+            geojson.color = el.getAttribute("data-color");
+            geojson.datastreamId = el.getAttribute("data-datastream-id");
+            geojson.subjectId = el.getAttribute("data-subject-id");
+            let data = [];
+            for (let item of response.value) {
+                //refilter by subject here for camera datastream
+                if (item.result.subject.id === el.getAttribute("data-subject-id")) {
+                    let location = item.result.location;
+                    data.push(location);
+                }
             }
-        }
-        geojson.features = data;
+            geojson.features = data;
 
-        let numberOfPoints = Object.keys(geojson.features).length;
+            let numberOfPoints = Object.keys(geojson.features).length;
 
-        //Handle opacity.
-        let i = 0;
-        for (let point of geojson.features) {
-            let opacity = (i + 1) / numberOfPoints;
-            geojson.features[i].properties.opacity = opacity.toFixed(2);
-            i++;
-        }
+            //Handle opacity.
+            let i = 0;
+            for (let point of geojson.features) {
+                let opacity = (i + 1) / numberOfPoints;
+                geojson.features[i].properties.opacity = opacity.toFixed(2);
+                i++;
+            }
 
-        console.log(JSON.stringify(geojson));
-        //TODO: here pass to map
+            console.log(JSON.stringify(geojson));
+            //TODO: here pass to map
+            addTraj(geojson);
 
+        });
+    } else {
+        //TODO: tell map to hide corresponding layer
+        console.log("hide this");
+    }
+}
 
-    });
+/**
+ * Handle click on api service item
+ * Fetch corresponding geojson
+ * And pass it to map
+ */
+function apiServiceMenuClick(el) {
+
 }
 
 
@@ -262,3 +340,5 @@ let colorFactory = (function () {
         }
     };
 }());
+
+
