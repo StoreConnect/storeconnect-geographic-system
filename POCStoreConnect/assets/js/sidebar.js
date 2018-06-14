@@ -160,6 +160,7 @@ function createApiCapteurMenu(items) {
             li.setAttribute("data-color", color);
             li.setAttribute("data-datastream-id", items[item][datastream][0].Datastream["@iot.id"]);
             li.setAttribute("data-subject-id", item);
+            li.setAttribute("data-layer-id", randomId());
             li.style.cursor = "pointer";
 
             li.onclick = function () {
@@ -221,6 +222,7 @@ function createApiServiceMenu(items) {
             li.setAttribute("data-color", color);
             li.setAttribute("data-datastream-id", items[item][datastream][0].Datastream["@iot.id"]);
             li.setAttribute("data-subject-id", item);
+            li.setAttribute("data-layer-id", randomId());
             li.style.cursor = "pointer";
 
             li.onclick = function () {
@@ -264,7 +266,7 @@ function apiCapteurMenuClick(el) {
             geojson.color = el.getAttribute("data-color");
             geojson.datastreamId = el.getAttribute("data-datastream-id");
             geojson.subjectId = el.getAttribute("data-subject-id");
-            geojson.id = randomId();
+            geojson.layerid = el.getAttribute("data-layer-id");
             let data = [];
             for (let item of response.value) {
                 //refilter by subject here for camera datastream
@@ -290,7 +292,7 @@ function apiCapteurMenuClick(el) {
         });
     } else {
         //TODO: tell map to hide corresponding layer
-        console.log("hide this");
+       hideLayer(el.getAttribute("data-layer-id"));
     }
 }
 
