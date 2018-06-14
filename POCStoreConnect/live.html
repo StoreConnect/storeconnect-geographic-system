@@ -130,7 +130,6 @@
     document.getElementById('apikey').value = apikey;
     document.querySelector('#venueid').value = 95;
     onLoadButtonClick();
-
     function onLoadButtonClick() {
         apikey = document.getElementById('apikey').value;
         venueid = document.getElementById('venueid').value;
@@ -170,7 +169,7 @@
                                 delete style.sources.composite.url; // Do not use tilejson url
                                 style.sources.composite.tiles = [baseurl + "/basemap/{z}/{x}/{y}.pbf"];
                                 style.sources.composite.maxzoom = 17;
-                                // style.sources.composite.minzoom = 5;
+                                style.sources.composite.minzoom = 5;
                             }
                             style.sprite = style.sprite.replace("{baseurl}", baseurl);
                             style.glyphs = style.glyphs.replace("{baseurl}", baseurl);
@@ -194,7 +193,7 @@
                             map = new mapboxgl.Map({
                                 container: 'map', // container id
                                 style: style,
-                                // minZoom: 14,
+                                minZoom: 14,
                                 maxZoom: 22,
                                 center: [venue.defaultlon, venue.defaultlat], // starting position
                                 zoom: venue.defaultzoom // starting zoom
@@ -205,7 +204,7 @@
                             // When a click event occurs near a marker icon, open a popup at the location of
                             // the feature, with description HTML from its properties.
                             map.on("click", function (e) {
-                                var features = map.queryRenderedFeatures(e.point, {layers: layerIds});
+                                var features = map.queryRenderedFeatures(e.point, { layers: layerIds });
                                 if (!features.length) return;
                                 var feature = features[0];
                                 console.log(feature);
@@ -537,11 +536,27 @@
     }
 
     function drawTrajectoire(geojson) {
-        // geojson = GEOJSON;
         // Flatten building and floor
         // markers = geojson;
-        for (var i = 0; i < geojson.features.length; i++) {
-            var f = geojson.features[i];
+
+        console.log(geojson);
+
+        var allFeatures = geojson.features;
+
+        //for (var i = 0; i < geojson.features.length; i++) {
+        //    var myCoordinate = geojson.features[i].geometry.coordinates;
+        //    allCoordinates.push(myCoordinate);
+        //}
+
+
+
+        console.log("ALL COORDINATES TAB");
+        console.log(allFeatures);
+        console.log("GEOJSON WITH ONLY 1 FEATURES");
+        console.log(geojson);
+
+        for (var i = 0; i < allFeatures.length; i++) {
+            var f = allFeatures[i];
             var v1 = f.geometry.coordinates[0];
             var v2 = f.geometry.coordinates[1];
             f.geometry.coordinates[0] = v2;
@@ -556,6 +571,8 @@
             f.properties.locationfloor = ""+f.properties.floor;
             //f.properties.appuserid = markers.subjectId;
         }
+        geojson.features = [];
+        geojson.features.push(allFeatures[0]);
 
         console.log(JSON.stringify(geojson));
 
@@ -569,23 +586,23 @@
         }
         if (found === false) layerIds.push(geojson.layerid);
 
-
-
-        if (!map.getSource("trajectoire"+geojson.layerid)) {
-            map.addSource("trajectoire"+geojson.layerid, {
+        if (!map.getSource("trajectoire")) {
+            map.addSource("trajectoire", {
                 "type": "geojson",
                 "maxzoom": 22,
                 "data": geojson
             });
         } else {
-            map.getSource("trajectoire"+geojson.layerid).setData(geojson);
+            console.log("Source OK => set data");
+            map.getSource("trajectoire").setData(geojson);
         }
 
+        console.log("After get source");
 
         map.addLayer({
             "id": geojson.layerid,
             "type": "circle",
-            "source": "trajectoire"+geojson.layerid,
+            "source": "trajectoire",
             "filter": ["all",
                 [
                     "==",
@@ -608,8 +625,21 @@
             }
         });
 
+        console.log("After add layer");
+
+        var i = 0;
+        var timer = window.setInterval(function () {
+            if (i < allFeatures.length) {
+                geojson.features.push(allFeatures[i]);
+                map.getSource('trajectoire').setData(geojson);
+                console.log("setData n° : "+i);
+                i++;
+            } else {
+                window.clearInterval(timer);
+            }
+        }, 300);
+
         // updateMarkersOnMap();
-        console.log(currentbuilding+"-"+currentfloor);
         applyFilters(currentbuilding, currentfloor);
     }
 
@@ -694,7 +724,6 @@
     //    });
     //}
 </script>
-
 <script type="application/javascript" src="assets/js/sidebar.js"></script>
 </body>
 </html>
