@@ -264,6 +264,7 @@ function apiCapteurMenuClick(el) {
             geojson.color = el.getAttribute("data-color");
             geojson.datastreamId = el.getAttribute("data-datastream-id");
             geojson.subjectId = el.getAttribute("data-subject-id");
+            geojson.id = randomId();
             let data = [];
             for (let item of response.value) {
                 //refilter by subject here for camera datastream
@@ -284,8 +285,7 @@ function apiCapteurMenuClick(el) {
             }
 
             // console.log(JSON.stringify(geojson));
-            //TODO: here pass to map
-            // addTraj(geojson);
+            drawTrajectoire(geojson);
 
         });
     } else {
@@ -345,4 +345,12 @@ let colorFactory = (function () {
     };
 }());
 
-
+/**
+ * Generate random id
+ */
+function randomId() {
+    return 'xxxxxxxx'.replace(/[xy]/g, function(c) {
+        let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString();
+    });
+}
