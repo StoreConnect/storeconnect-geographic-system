@@ -78,12 +78,12 @@
                 <div id="apiservice">
                     <span class="navbar-brand">API SERVICE</span>
                     <img src="assets/loader.gif" class="col-12 loader-service"/>
-                    <div id="apicapteurservice">
+                    <div id="apiservicemenu">
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-9">
+        <div class="col-9 map">
             <input type="text" id="apikey" size="40" value="" placeholder="put_api_key"/>
             <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id"/>
             <input type="button" value="Load venue" onclick="onLoadButtonClick()"/><br/>
@@ -105,6 +105,7 @@
 <script type="application/javascript" src="assets/js/moment-with-locales.min.js"></script>
 <script type="application/javascript" src="assets/js/bootstrap.min.js"></script>
 <script type="application/javascript" src="assets/js/bootstrap-datetimepicker.min.js"></script>
+<script type="application/javascript" src="assets/js/apiservicemockup.js"></script>
 <script>
     // Change values according
     var apikey = location.search.substring(location.search.indexOf("=") + 1);
@@ -203,7 +204,7 @@
                             // When a click event occurs near a marker icon, open a popup at the location of
                             // the feature, with description HTML from its properties.
                             map.on("click", function (e) {
-                                var features = map.queryRenderedFeatures(e.point, {layers: layerIds});
+                                var features = map.queryRenderedFeatures(e.point, { layers: layerIds });
                                 if (!features.length) return;
                                 var feature = features[0];
                                 console.log(feature);
@@ -537,8 +538,25 @@
     function drawTrajectoire(geojson) {
         // Flatten building and floor
         // markers = geojson;
-        for (var i = 0; i < geojson.features.length; i++) {
-            var f = geojson.features[i];
+
+        console.log(geojson);
+
+        var allFeatures = geojson.features;
+
+        //for (var i = 0; i < geojson.features.length; i++) {
+        //    var myCoordinate = geojson.features[i].geometry.coordinates;
+        //    allCoordinates.push(myCoordinate);
+        //}
+
+
+
+        console.log("ALL COORDINATES TAB");
+        console.log(allFeatures);
+        console.log("GEOJSON WITH ONLY 1 FEATURES");
+        console.log(geojson);
+
+        for (var i = 0; i < allFeatures.length; i++) {
+            var f = allFeatures[i];
             var v1 = f.geometry.coordinates[0];
             var v2 = f.geometry.coordinates[1];
             f.geometry.coordinates[0] = v2;
@@ -549,12 +567,14 @@
 
             //f.properties = {};
             //f.properties.location = {};
-            f.properties.locationbuilding = f.properties.building;
-            f.properties.locationfloor = f.properties.floor;
+            f.properties.locationbuilding = ""+f.properties.building;
+            f.properties.locationfloor = ""+f.properties.floor;
             //f.properties.appuserid = markers.subjectId;
         }
+        geojson.features = [];
+        geojson.features.push(allFeatures[0]);
 
-        // console.log(JSON.stringify(geojson));
+        console.log(JSON.stringify(geojson));
 
         // Add layers in layers list
         let found = false;
@@ -573,9 +593,11 @@
                 "data": geojson
             });
         } else {
+            console.log("Source OK => set data");
             map.getSource("trajectoire").setData(geojson);
         }
 
+        console.log("After get source");
 
         map.addLayer({
             "id": geojson.layerid,
@@ -602,6 +624,20 @@
                 }
             }
         });
+
+        console.log("After add layer");
+
+        var i = 0;
+        var timer = window.setInterval(function () {
+            if (i < allFeatures.length) {
+                geojson.features.push(allFeatures[i]);
+                map.getSource('trajectoire').setData(geojson);
+                console.log("setData n° : "+i);
+                i++;
+            } else {
+                window.clearInterval(timer);
+            }
+        }, 300);
 
         // updateMarkersOnMap();
         applyFilters(currentbuilding, currentfloor);
@@ -688,7 +724,6 @@
     //    });
     //}
 </script>
-
 <script type="application/javascript" src="assets/js/sidebar.js"></script>
 </body>
 </html>
