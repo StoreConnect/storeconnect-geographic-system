@@ -33,17 +33,17 @@ $(function () {
         useCurrent: false //Important
     });
 
-    $("#datetimepickerFROM").on("dp.change", function (e) {
-        $('#datetimepickerTO').data("DateTimePicker").minDate(e.date);
-    });
-    $("#datetimepickerTO").on("dp.change", function (e) {
-        $('#datetimepickerFROM').data("DateTimePicker").maxDate(e.date);
-    });
+    // $("#datetimepickerFROM").on("change.datetimepicker", function (e) {
+    //     $('#datetimepickerTO').datetimepicker(minDate, e.date);
+    // });
+    // $("#datetimepickerTO").on("change.datetimepicker", function (e) {
+    //     $('#datetimepickerFROM').datetimepicker(maxDate, e.date);
+    // });
 });
 
 $(function () {
     $("#loadMenu").on("click", function () {
-        if (dtFROM.value != "" && dtTO.value != "") {
+        if (dtFROM.value !== "" && dtTO.value !== "") {
             loadMenu(dtFROM.value, dtTO.value);
         } else {
             alert('please select a date range first');
@@ -130,7 +130,6 @@ function createApiCapteurMenu(items) {
         ul.appendChild(p);
 
         for (let datastream of Object.keys(items[item])) {
-            console.log(items[item][datastream][0].Datastream.phenomenonTime);
             let li = document.createElement("li");
 
             let datetimeF = items[item][datastream][0].Datastream.phenomenonTime.split("/")[0];
@@ -149,8 +148,13 @@ function createApiCapteurMenu(items) {
             colorIcon.setAttribute("class", "fas fa-square-full float-right pr-5");
             colorIcon.style.color = color;
 
+            let spanNBPoints = document.createElement("span");
+            spanNBPoints.setAttribute("class", "li-ds-nbpoints");
+            spanNBPoints.appendChild(document.createTextNode(" - " + items[item][datastream].length));
+
             li.appendChild(spanDS);
             li.appendChild(spanDSDate);
+            li.appendChild(spanNBPoints);
             li.appendChild(colorIcon);
 
             li.setAttribute("data-color", color);
@@ -208,6 +212,7 @@ function createApiServiceMenu(items) {
             let colorIcon = document.createElement("i");
             colorIcon.setAttribute("class", "fas fa-square-full float-right pr-5");
             colorIcon.style.color = color;
+
 
             li.appendChild(spanDS);
             li.appendChild(spanDSDate);
@@ -270,7 +275,6 @@ function apiCapteurMenuClick(el) {
             geojson.features = data;
 
             let numberOfPoints = Object.keys(geojson.features).length;
-
             //Handle opacity.
             let i = 0;
             for (let point of geojson.features) {
@@ -279,9 +283,9 @@ function apiCapteurMenuClick(el) {
                 i++;
             }
 
-            console.log(JSON.stringify(geojson));
+            // console.log(JSON.stringify(geojson));
             //TODO: here pass to map
-            addTraj(geojson);
+            // addTraj(geojson);
 
         });
     } else {

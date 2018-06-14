@@ -28,6 +28,11 @@ html, body, .container-fluid {
     font-size:10px;
 }
 
+.li-ds-nbpoints {
+    font-style: italic;
+    font-size:10px;
+}
+
 .ul-subject-title {
     width: 75%;
     font-style: italic;
