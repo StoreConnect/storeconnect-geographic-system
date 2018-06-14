@@ -129,6 +129,7 @@
     document.getElementById('apikey').value = apikey;
     document.querySelector('#venueid').value = 95;
     onLoadButtonClick();
+
     function onLoadButtonClick() {
         apikey = document.getElementById('apikey').value;
         venueid = document.getElementById('venueid').value;
@@ -168,7 +169,7 @@
                                 delete style.sources.composite.url; // Do not use tilejson url
                                 style.sources.composite.tiles = [baseurl + "/basemap/{z}/{x}/{y}.pbf"];
                                 style.sources.composite.maxzoom = 17;
-                                style.sources.composite.minzoom = 5;
+                                // style.sources.composite.minzoom = 5;
                             }
                             style.sprite = style.sprite.replace("{baseurl}", baseurl);
                             style.glyphs = style.glyphs.replace("{baseurl}", baseurl);
@@ -192,7 +193,7 @@
                             map = new mapboxgl.Map({
                                 container: 'map', // container id
                                 style: style,
-                                minZoom: 14,
+                                // minZoom: 14,
                                 maxZoom: 22,
                                 center: [venue.defaultlon, venue.defaultlat], // starting position
                                 zoom: venue.defaultzoom // starting zoom
@@ -535,6 +536,7 @@
     }
 
     function drawTrajectoire(geojson) {
+        // geojson = GEOJSON;
         // Flatten building and floor
         // markers = geojson;
         for (var i = 0; i < geojson.features.length; i++) {
@@ -549,12 +551,12 @@
 
             //f.properties = {};
             //f.properties.location = {};
-            f.properties.locationbuilding = f.properties.building;
-            f.properties.locationfloor = f.properties.floor;
+            f.properties.locationbuilding = ""+f.properties.building;
+            f.properties.locationfloor = ""+f.properties.floor;
             //f.properties.appuserid = markers.subjectId;
         }
 
-        // console.log(JSON.stringify(geojson));
+        console.log(JSON.stringify(geojson));
 
         // Add layers in layers list
         let found = false;
@@ -566,21 +568,23 @@
         }
         if (found === false) layerIds.push(geojson.layerid);
 
-        if (!map.getSource("trajectoire")) {
-            map.addSource("trajectoire", {
+
+
+        if (!map.getSource("trajectoire"+geojson.layerid)) {
+            map.addSource("trajectoire"+geojson.layerid, {
                 "type": "geojson",
                 "maxzoom": 22,
                 "data": geojson
             });
         } else {
-            map.getSource("trajectoire").setData(geojson);
+            map.getSource("trajectoire"+geojson.layerid).setData(geojson);
         }
 
 
         map.addLayer({
             "id": geojson.layerid,
             "type": "circle",
-            "source": "trajectoire",
+            "source": "trajectoire"+geojson.layerid,
             "filter": ["all",
                 [
                     "==",
@@ -604,6 +608,7 @@
         });
 
         // updateMarkersOnMap();
+        console.log(currentbuilding+"-"+currentfloor);
         applyFilters(currentbuilding, currentfloor);
     }
 
