@@ -78,12 +78,12 @@
                 <div id="apiservice">
                     <span class="navbar-brand">API SERVICE</span>
                     <img src="assets/loader.gif" class="col-12 loader-service"/>
-                    <div id="apicapteurservice">
+                    <div id="apiservicemenu">
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-9">
+        <div class="col-9 map">
             <input type="text" id="apikey" size="40" value="" placeholder="put_api_key"/>
             <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id"/>
             <input type="button" value="Load venue" onclick="onLoadButtonClick()"/><br/>
@@ -105,6 +105,7 @@
 <script type="application/javascript" src="assets/js/moment-with-locales.min.js"></script>
 <script type="application/javascript" src="assets/js/bootstrap.min.js"></script>
 <script type="application/javascript" src="assets/js/bootstrap-datetimepicker.min.js"></script>
+<script type="application/javascript" src="assets/js/apiservicemockup.js"></script>
 <script>
     // Change values according
     var apikey = location.search.substring(location.search.indexOf("=") + 1);

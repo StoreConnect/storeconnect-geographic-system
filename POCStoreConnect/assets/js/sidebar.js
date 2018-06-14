@@ -67,7 +67,7 @@ function loadMenu(dateFROM, dateTO) {
 
     //empty already shown data
     document.querySelector("#apicapteurmenu").innerHTML = "";
-    document.querySelector("#apicapteurservice").innerHTML = "";
+    document.querySelector("#apiservicemenu").innerHTML = "";
 
     //toggle loaders
     toggleLoaderCapteur();
@@ -111,6 +111,8 @@ function loadMenu(dateFROM, dateTO) {
 
     //TODO: fetch API service
 
+    createApiServiceMenu(GEOJSON_SERVICE);
+
 }
 
 
@@ -141,7 +143,7 @@ function createApiCapteurMenu(items) {
 
             let spanDSDate = document.createElement("span");
             spanDSDate.setAttribute("class", "li-ds-date");
-            spanDSDate.appendChild(document.createTextNode(" (" + datetimeF.substring(0, datetimeF.length - 8) + "-" + datetimeT.substring(0, datetimeT.length - 8) + ")"));
+            spanDSDate.appendChild(document.createTextNode(" (" + datetimeF.substring(0, datetimeF.length - 8) + "/" + datetimeT.substring(0, datetimeT.length - 8) + ")"));
 
             let color = colorFactory.getRandomColor();
             let colorIcon = document.createElement("i");
@@ -185,57 +187,47 @@ function createApiCapteurMenu(items) {
 function createApiServiceMenu(items) {
     let menu = document.querySelector("#apiservicemenu");
     let uls = [];
+    let ul = document.createElement('ul');
+    ul.setAttribute("class", "ul-subject");
 
-    for (let item of Object.keys(items)) {
-        let ul = document.createElement('ul');
-        ul.setAttribute("class", "ul-subject");
-        let p = document.createElement("p");
-        p.setAttribute("class", "ul-subject-title");
-        p.appendChild(document.createTextNode(item));
-        ul.appendChild(p);
+    let li = document.createElement("li");
 
-        for (let datastream of Object.keys(items[item])) {
-            console.log(items[item][datastream][0].Datastream.phenomenonTime);
-            let li = document.createElement("li");
+    let datetimeF = items.features[0].properties.dtstamp;
+    let datetimeT = items.features[items.features.length - 1].properties.dtstamp;
 
-            let datetimeF = items[item][datastream][0].Datastream.phenomenonTime.split("/")[0];
-            let datetimeT = items[item][datastream][0].Datastream.phenomenonTime.split("/")[1];
+    let spanDS = document.createElement("span");
+    spanDS.setAttribute("class", "ul-subject-title");
+    spanDS.appendChild(document.createTextNode(items.features[0].properties.subject.split("/").pop()));
 
-            let spanDS = document.createElement("span");
-            spanDS.setAttribute("class", "li-ds");
-            spanDS.appendChild(document.createTextNode(datastream));
+    let spanDSDate = document.createElement("span");
+    spanDSDate.setAttribute("class", "li-ds-date");
+    spanDSDate.appendChild(document.createTextNode(" (" + datetimeF.substring(0, datetimeF.length - 8) + "/" + datetimeT.substring(0, datetimeT.length - 8) + ")"));
 
-            let spanDSDate = document.createElement("span");
-            spanDSDate.setAttribute("class", "li-ds-date");
-            spanDSDate.appendChild(document.createTextNode(" (" + datetimeF.substring(0, datetimeF.length - 8) + "-" + datetimeT.substring(0, datetimeT.length - 8) + ")"));
+    let color = colorFactory.getRandomColor();
+    let colorIcon = document.createElement("i");
+    colorIcon.setAttribute("class", "fas fa-square-full float-right pr-5");
+    colorIcon.style.color = color;
 
-            let color = colorFactory.getRandomColor();
-            let colorIcon = document.createElement("i");
-            colorIcon.setAttribute("class", "fas fa-square-full float-right pr-5");
-            colorIcon.style.color = color;
+    let spanNBPoints = document.createElement("span");
+    spanNBPoints.setAttribute("class", "li-ds-nbpoints");
+    spanNBPoints.appendChild(document.createTextNode(" - " + items.features.length));
 
+    li.appendChild(spanDS);
+    li.appendChild(spanDSDate);
+    li.appendChild(spanNBPoints);
+    li.appendChild(colorIcon);
 
-            li.appendChild(spanDS);
-            li.appendChild(spanDSDate);
-            li.appendChild(colorIcon);
+    li.setAttribute("data-color", color);
+    li.setAttribute("data-subject-id", items.features[0].properties.subject.split("/").pop());
+    li.setAttribute("data-layer-id", randomId());
+    li.style.cursor = "pointer";
 
-            li.setAttribute("data-color", color);
-            li.setAttribute("data-datastream-id", items[item][datastream][0].Datastream["@iot.id"]);
-            li.setAttribute("data-subject-id", item);
-            li.setAttribute("data-layer-id", randomId());
-            li.style.cursor = "pointer";
+    li.onclick = function () {
+        apiServiceMenuClick(li);
+    };
 
-            li.onclick = function () {
-                apiServiceMenuClick(li);
-            };
-
-            ul.appendChild(li);
-        }
-
-        uls.push(ul);
-    }
-
-
+    ul.appendChild(li);
+    uls.push(ul);
     for (let ul of uls) {
         menu.appendChild(ul);
     }
@@ -291,8 +283,7 @@ function apiCapteurMenuClick(el) {
 
         });
     } else {
-        //TODO: tell map to hide corresponding layer
-       hideLayer(el.getAttribute("data-layer-id"));
+        hideLayer(el.getAttribute("data-layer-id"));
     }
 }
 
@@ -302,7 +293,29 @@ function apiCapteurMenuClick(el) {
  * And pass it to map
  */
 function apiServiceMenuClick(el) {
+    el.classList.toggle("active");
 
+    if (el.classList.contains("active")) {
+        let geojson = GEOJSON_SERVICE;
+        geojson.color = el.getAttribute("data-color");
+        geojson.subjectId = el.getAttribute("data-subject-id");
+        geojson.layerid = el.getAttribute("data-layer-id");
+
+        let numberOfPoints = Object.keys(geojson.features).length;
+        //Handle opacity.
+        let i = 0;
+        for (let point of geojson.features) {
+            let opacity = (i + 1) / numberOfPoints;
+            geojson.features[i].properties.opacity = opacity.toFixed(2);
+            geojson.features[i].properties.building = "1";
+            i++;
+        }
+
+        // console.log(JSON.stringify(geojson));
+        drawTrajectoire(geojson);
+    } else {
+        hideLayer(el.getAttribute("data-layer-id"));
+    }
 }
 
 
@@ -351,7 +364,7 @@ let colorFactory = (function () {
  * Generate random id
  */
 function randomId() {
-    return 'xxxxxxxx'.replace(/[xy]/g, function(c) {
+    return 'xxxxxxxx'.replace(/[xy]/g, function (c) {
         let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
         return v.toString();
     });

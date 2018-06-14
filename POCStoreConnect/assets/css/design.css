@@ -9,7 +9,6 @@ html, body, .container-fluid {
 .sidebar{
     border-right:1px solid rgba(0,0,0,0.15);
     height:100%;
-    overflow: scroll;
 }
 
 .ul-subject {
@@ -46,6 +45,7 @@ html, body, .container-fluid {
     text-align: left;
     text-indent: 0.25em;
     margin-bottom: 0;
+    display: block;
 }
 
 
