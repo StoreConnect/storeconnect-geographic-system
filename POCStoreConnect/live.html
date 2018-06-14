@@ -84,12 +84,14 @@
             </div>
         </div>
         <div class="col-9 map">
-            <input type="text" id="apikey" size="40" value="" placeholder="put_api_key"/>
-            <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id"/>
-            <input type="button" value="Load venue" onclick="onLoadButtonClick()"/><br/>
-            <input type="text" id="geojsonurl" size="100" value="" placeholder="geojson url"/>
-            <input type="button" id="geojsonbtn" value="Load GeoJSON Points" onclick="onLoadGeoJSONButtonClick()"/>
-            <input type="button" id="playbtn" value="Start" style="display:none" onclick="onPlayButtonClick()"/>
+            <div align="center">
+                <input type="text" id="apikey" size="40" value="" placeholder="put_api_key"/>
+                <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id"/>
+                <input type="button" value="Load venue" onclick="onLoadButtonClick()"/><br/>
+            </div>
+            <!--<input type="text" id="geojsonurl" size="100" value="" placeholder="geojson url"/>-->
+            <!--<input type="button" id="geojsonbtn" value="Load GeoJSON Points" onclick="onLoadGeoJSONButtonClick()"/>-->
+            <!--<input type="button" id="playbtn" value="Start" style="display:none" onclick="onPlayButtonClick()"/>-->
             <div align="center" id="buttons">
             </div>
             <div id='map'>
@@ -130,6 +132,7 @@
     document.getElementById('apikey').value = apikey;
     document.querySelector('#venueid').value = 95;
     onLoadButtonClick();
+
     function onLoadButtonClick() {
         apikey = document.getElementById('apikey').value;
         venueid = document.getElementById('venueid').value;
@@ -204,7 +207,7 @@
                             // When a click event occurs near a marker icon, open a popup at the location of
                             // the feature, with description HTML from its properties.
                             map.on("click", function (e) {
-                                var features = map.queryRenderedFeatures(e.point, { layers: layerIds });
+                                var features = map.queryRenderedFeatures(e.point, {layers: layerIds});
                                 if (!features.length) return;
                                 var feature = features[0];
                                 console.log(feature);
@@ -549,7 +552,6 @@
         //}
 
 
-
         console.log("ALL COORDINATES TAB");
         console.log(allFeatures);
         console.log("GEOJSON WITH ONLY 1 FEATURES");
@@ -567,12 +569,12 @@
 
             //f.properties = {};
             //f.properties.location = {};
-            f.properties.locationbuilding = ""+f.properties.building;
-            f.properties.locationfloor = ""+f.properties.floor;
+            f.properties.locationbuilding = "" + f.properties.building;
+            f.properties.locationfloor = "" + f.properties.floor;
             //f.properties.appuserid = markers.subjectId;
         }
-        geojson.features = [];
-        geojson.features.push(allFeatures[0]);
+        // geojson.features = [];
+        // geojson.features.push(allFeatures[0]);
 
         console.log(JSON.stringify(geojson));
 
@@ -593,11 +595,9 @@
                 "data": geojson
             });
         } else {
-            console.log("Source OK => set data");
             map.getSource("trajectoire").setData(geojson);
         }
 
-        console.log("After get source");
 
         map.addLayer({
             "id": geojson.layerid,
@@ -616,7 +616,7 @@
                 ]
             ],
             "paint": {
-                "circle-radius": 3,
+                "circle-radius": 5,
                 "circle-color": geojson.color,
                 "circle-opacity": {
                     "property": "opacity",
@@ -625,19 +625,18 @@
             }
         });
 
-        console.log("After add layer");
 
-        var i = 0;
-        var timer = window.setInterval(function () {
-            if (i < allFeatures.length) {
-                geojson.features.push(allFeatures[i]);
-                map.getSource('trajectoire').setData(geojson);
-                console.log("setData n° : "+i);
-                i++;
-            } else {
-                window.clearInterval(timer);
-            }
-        }, 300);
+        // var i = 0;
+        // var timer = window.setInterval(function () {
+        //     if (i < allFeatures.length) {
+        //         geojson.features.push(allFeatures[i]);
+        //         map.getSource('trajectoire').setData(geojson);
+        //         console.log("setData n° : "+i);
+        //         i++;
+        //     } else {
+        //         window.clearInterval(timer);
+        //     }
+        // }, 300);
 
         // updateMarkersOnMap();
         applyFilters(currentbuilding, currentfloor);

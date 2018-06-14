@@ -111,7 +111,7 @@ function loadMenu(dateFROM, dateTO) {
 
     //TODO: fetch API service
 
-    createApiServiceMenu(GEOJSON_SERVICE);
+    // createApiServiceMenu(GEOJSON_SERVICE);
 
 }
 
