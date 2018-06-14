@@ -1,15 +1,15 @@
 ﻿<!DOCTYPE html>
 <html>
 <head>
-    <meta charset='utf-8'/>
+    <meta charset='utf-8' />
     <title></title>
-    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
     <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.css' rel='stylesheet'/>
-    <link href='assets/css/bootstrap.min.css' rel='stylesheet'/>
-    <link href='assets/css/fontawesome-all.min.css' rel='stylesheet'/>
-    <link href='assets/css/bootstrap-datetimepicker.min.css' rel='stylesheet'/>
-    <link href='assets/css/design.css' rel='stylesheet'/>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.css' rel='stylesheet' />
+    <link href='assets/css/bootstrap.min.css' rel='stylesheet' />
+    <link href='assets/css/fontawesome-all.min.css' rel='stylesheet' />
+    <link href='assets/css/bootstrap-datetimepicker.min.css' rel='stylesheet' />
+    <link href='assets/css/design.css' rel='stylesheet' />
     <style>
         body {
             margin: 0;
@@ -25,670 +25,705 @@
     </style>
 </head>
 <body>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-3 sidebar p-0">
-            <div class="w-100">
-                <span class="navbar-brand w-100 text-center bg-danger text-white">
-                    StoreConnect Dashboard
-                </span>
-            </div>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-3 sidebar p-0">
+                <div class="w-100">
+                    <span class="navbar-brand w-100 text-center bg-danger text-white">
+                        StoreConnect Dashboard
+                    </span>
+                </div>
 
-            <div class="w-100 daterange">
-                <div class="row">
-                    <div class="col-6">
-                        <p class="text-center">From</p>
-                        <div class="form-group">
-                            <div class="input-group date" id="datetimepickerFROM" data-target-input="nearest">
-                                <input type="text" id="dtFROM" class="form-control datetimepicker-input"
-                                       data-target="#datetimepickerFROM"/>
-                                <div class="input-group-append" data-target="#datetimepickerFROM"
-                                     data-toggle="datetimepicker">
-                                    <div class="input-group-text"><i class="fas fa-calendar"></i></div>
+                <div class="w-100 daterange">
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="text-center">From</p>
+                            <div class="form-group">
+                                <div class="input-group date" id="datetimepickerFROM" data-target-input="nearest">
+                                    <input type="text" id="dtFROM" class="form-control datetimepicker-input"
+                                           data-target="#datetimepickerFROM" />
+                                    <div class="input-group-append" data-target="#datetimepickerFROM"
+                                         data-toggle="datetimepicker">
+                                        <div class="input-group-text"><i class="fas fa-calendar"></i></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-6">
-                        <p class="text-center">To</p>
-                        <div class="form-group">
-                            <div class="input-group date" id="datetimepickerTO" data-target-input="nearest">
-                                <input type="text" id="dtTO" class="form-control datetimepicker-input"
-                                       data-target="#datetimepickerTO"/>
-                                <div class="input-group-append" data-target="#datetimepickerTO"
-                                     data-toggle="datetimepicker">
-                                    <div class="input-group-text"><i class="fas fa-calendar"></i></div>
+                        <div class="col-6">
+                            <p class="text-center">To</p>
+                            <div class="form-group">
+                                <div class="input-group date" id="datetimepickerTO" data-target-input="nearest">
+                                    <input type="text" id="dtTO" class="form-control datetimepicker-input"
+                                           data-target="#datetimepickerTO" />
+                                    <div class="input-group-append" data-target="#datetimepickerTO"
+                                         data-toggle="datetimepicker">
+                                        <div class="input-group-text"><i class="fas fa-calendar"></i></div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <div class="col-12 text-center">
+                            <button id="loadMenu">Validate</button>
+                        </div>
                     </div>
-                    <div class="col-12 text-center">
-                        <button id="loadMenu">Validate</button>
+                </div>
+                <hr>
+                <div id="menu">
+                    <div id="apicapteur">
+                        <span class="navbar-brand">API CAPTEUR</span>
+                        <img src="assets/loader.gif" class="col-12 loader-capteur" />
+                        <div id="apicapteurmenu">
+                        </div>
+                    </div>
+                    <div id="apiservice">
+                        <span class="navbar-brand">API SERVICE</span>
+                        <img src="assets/loader.gif" class="col-12 loader-service" />
+                        <div id="apicapteurservice">
+                        </div>
                     </div>
                 </div>
             </div>
-            <hr>
-            <div id="menu">
-                <div id="apicapteur">
-                    <span class="navbar-brand">API CAPTEUR</span>
-                    <img src="assets/loader.gif" class="col-12 loader-capteur"/>
-                    <div id="apicapteurmenu">
-                    </div>
+            <div class="col-9">
+                <input type="text" id="apikey" size="40" value="" placeholder="put_api_key" />
+                <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id" />
+                <input type="button" value="Load venue" onclick="onLoadButtonClick()" /><br />
+                <input type="text" id="geojsonurl" size="100" value="" placeholder="geojson url" />
+                <input type="button" id="geojsonbtn" value="Load GeoJSON Points" onclick="onLoadGeoJSONButtonClick()" />
+                <input type="button" id="playbtn" value="Start" style="display:none" onclick="onPlayButtonClick()" />
+                <div align="center" id="buttons">
                 </div>
-                <div id="apiservice">
-                    <span class="navbar-brand">API SERVICE</span>
-                    <img src="assets/loader.gif" class="col-12 loader-service"/>
-                    <div id="apicapteurservice">
-                    </div>
+                <div id='map'>
+
                 </div>
             </div>
+
+
         </div>
-        <div class="col-9">
-            <input type="text" id="apikey" size="40" value="" placeholder="put_api_key"/>
-            <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id"/>
-            <input type="button" value="Load venue" onclick="onLoadButtonClick()"/><br/>
-            <input type="text" id="geojsonurl" size="100" value="" placeholder="geojson url"/>
-            <input type="button" id="geojsonbtn" value="Load GeoJSON Points" onclick="onLoadGeoJSONButtonClick()"/>
-            <input type="button" id="playbtn" value="Start" style="display:none" onclick="onPlayButtonClick()"/>
-            <div align="center" id="buttons">
-            </div>
-            <div id='map'>
-
-            </div>
-        </div>
-
-
     </div>
-</div>
-<script type="application/javascript" src="assets/js/jquery.js"></script>
-<script type="application/javascript" src="assets/js/popper.js"></script>
-<script type="application/javascript" src="assets/js/moment-with-locales.min.js"></script>
-<script type="application/javascript" src="assets/js/bootstrap.min.js"></script>
-<script type="application/javascript" src="assets/js/bootstrap-datetimepicker.min.js"></script>
-<script>
-    // Change values according
-    var apikey = location.search.substring(location.search.indexOf("=") + 1);
-    apikey = "902329f5-5894-4ba4-89e8-b8efb9f4de6b";
-    var baseurl = location.protocol + '//' + location.host;
-    baseurl = 'https://toolsgeolys.azurewebsites.net';
-    var map = null;
+    <script type="application/javascript" src="assets/js/jquery.js"></script>
+    <script type="application/javascript" src="assets/js/popper.js"></script>
+    <script type="application/javascript" src="assets/js/moment-with-locales.min.js"></script>
+    <script type="application/javascript" src="assets/js/bootstrap.min.js"></script>
+    <script type="application/javascript" src="assets/js/bootstrap-datetimepicker.min.js"></script>
+    <script>
+        // Change values according
+        var apikey = location.search.substring(location.search.indexOf("=") + 1);
+        apikey = "902329f5-5894-4ba4-89e8-b8efb9f4de6b";
+        var baseurl = location.protocol + '//' + location.host;
+        baseurl = 'https://toolsgeolys.azurewebsites.net';
+        var map = null;
 
-    var layerIds = [];
-    var venueid = 0;
-    var MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZnJhbmNrdCIsImEiOiJjaWpvamRoZGIwMDZidzFtMzVkMzQ5dWJ2In0.Blcw5mev30TMpmeXick_0g';
-    var currentbuilding = '';
-    var currentfloor = '';
-    var timer = null;
-    var markersToDisplay = {};
-    var markers = {};
-    markersToDisplay.type = "FeatureCollection";
-    var markerIndex = 0;
-    var nbMarkersToDisplay = 100;
-    var start = 0;
-    var playstatus = 0;
-    document.getElementById('apikey').value = apikey;
-    document.querySelector('#venueid').value = 95;
-    onLoadButtonClick();
-    function onLoadButtonClick() {
-        apikey = document.getElementById('apikey').value;
-        venueid = document.getElementById('venueid').value;
-        // Load geolys venue
-        loadVenue(apikey, venueid, function (err, venue) {
-            // console.log(venue);
-            if (venue && venue.styles) {
-                // Generate floor buttons
-                var buttons = document.getElementById('buttons');
-                buttons.innerHTML = '<button id="outdoor" onclick="changefloor()">Outdoor</button>';
-                for (var i = 0; i < venue.buildings.length; i++) {
-                    var b = venue.buildings[i];
-                    for (var j = 0; j < b.floors.length; j++) {
-                        var f = b.floors[j];
-                        var btn = document.createElement('button');
-                        btn.innerHTML = (j == 0 ? b.name + " : " : "") + f.floor;
-                        btn.setAttribute('onclick', 'changefloor("' + b.id + '", "' + f.floor + '");');
-                        buttons.appendChild(btn);
+        var layerIds = [];
+        var venueid = 0;
+        var MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZnJhbmNrdCIsImEiOiJjaWpvamRoZGIwMDZidzFtMzVkMzQ5dWJ2In0.Blcw5mev30TMpmeXick_0g';
+        var currentbuilding = '';
+        var currentfloor = '';
+        var timer = null;
+        var markersToDisplay = {};
+        var markers = {};
+        markersToDisplay.type = "FeatureCollection";
+        var markerIndex = 0;
+        var nbMarkersToDisplay = 100;
+        var start = 0;
+        var playstatus = 0;
+        document.getElementById('apikey').value = apikey;
+        document.querySelector('#venueid').value = 95;
+        onLoadButtonClick();
+        function onLoadButtonClick() {
+            apikey = document.getElementById('apikey').value;
+            venueid = document.getElementById('venueid').value;
+            // Load geolys venue
+            loadVenue(apikey, venueid, function (err, venue) {
+                // console.log(venue);
+                if (venue && venue.styles) {
+                    // Generate floor buttons
+                    var buttons = document.getElementById('buttons');
+                    buttons.innerHTML = '<button id="outdoor" onclick="changefloor()">Outdoor</button>';
+                    for (var i = 0; i < venue.buildings.length; i++) {
+                        var b = venue.buildings[i];
+                        for (var j = 0; j < b.floors.length; j++) {
+                            var f = b.floors[j];
+                            var btn = document.createElement('button');
+                            btn.innerHTML = (j == 0 ? b.name + " : " : "") + f.floor;
+                            btn.setAttribute('onclick', 'changefloor("' + b.id + '", "' + f.floor + '");');
+                            buttons.appendChild(btn);
+                        }
+                    }
+                    // Load venue GL style template
+                    loadJSON(venue.styles + '?ts=' + new Date().getTime(), function (err, style) {
+                        // console.log(style);
+                        if (style && venue.features) {
+                            // load venue features
+                            loadJSON(venue.features + '?ts=' + new Date().getTime(), function (err, features) {
+                                // console.log(features);
+                                // Change venue source to geojson
+                                delete style.sources.venue.url; // Do not use tilejson venue url
+                                style.sources.venue.type = "geojson";
+                                style.sources.venue.data = features;
+                                style.sources.venue.maxzoom = 22;
+                                style.sources.venue.tolerance = 0.001;
+                                style.sources.venue.buffer = 256;
+                                // Set urls to local server if not using mapbox source
+                                if (style.sources.composite.url.indexOf('mapbox://') == -1) {
+                                    delete style.sources.composite.url; // Do not use tilejson url
+                                    style.sources.composite.tiles = [baseurl + "/basemap/{z}/{x}/{y}.pbf"];
+                                    style.sources.composite.maxzoom = 17;
+                                    style.sources.composite.minzoom = 5;
+                                }
+                                style.sprite = style.sprite.replace("{baseurl}", baseurl);
+                                style.glyphs = style.glyphs.replace("{baseurl}", baseurl);
+                                // Save layers to set filter at runtime
+                                layerIds = [];
+                                for (var i = 0; i < style.layers.length; i++) {
+                                    var l = style.layers[i];
+                                    if (l.id.indexOf('{location}') >= 0) {
+                                        layerIds.push(l.id);
+                                        if (l.type == "symbol") {
+                                            l.layout["text-allow-overlap"] = false;
+                                            l.layout["icon-allow-overlap"] = false;
+                                        }
+                                        l.layout["visibility"] = "visible";
+                                        // Add paint style from paint location style
+                                        l.paint = l["paint.{location}"];
+                                    }
+                                }
+                                mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+                                // Add map
+                                map = new mapboxgl.Map({
+                                    container: 'map', // container id
+                                    style: style,
+                                    minZoom: 14,
+                                    maxZoom: 22,
+                                    center: [venue.defaultlon, venue.defaultlat], // starting position
+                                    zoom: venue.defaultzoom // starting zoom
+                                });
+                                //map.addControl(new mapboxgl.Navigation());
+                                map.on('style.load', function () {
+                                });
+                                // When a click event occurs near a marker icon, open a popup at the location of
+                                // the feature, with description HTML from its properties.
+                                map.on("click", function (e) {
+                                    var features = map.queryRenderedFeatures(e.point, { layers: layerIds });
+                                    if (!features.length) return;
+                                    var feature = features[0];
+                                    console.log(feature);
+                                    new mapboxgl.Popup()
+                                        .setLngLat(feature.geometry.coordinates)
+                                        .setHTML(feature.properties.description)
+                                        .addTo(map);
+                                });
+                                // Use the same approach as above to indicate that the symbols are clickable
+                                // by changing the cursor style to 'pointer'.
+                                map.on("mousemove", function (e) {
+                                    /*                        var features = map.queryRenderedFeatures(e.point, { layers: [ 'markers'] });
+                                                                    map.getCanvas().style.cursor = (!err && features.length) ? 'pointer' : '';
+                                    */
+                                });
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function onLoadGeoJSONButtonClick() {
+            /*if(timer) {
+                clearInterval(timer);
+                document.getElementById('geojsonbtn').value = "Load GeoJSON Points";
+                timer = null;
+            }
+            else {
+                timer = setInterval(loadMarkersFunc, 2000);
+                document.getElementById('geojsonbtn').value = "Stop GeoJSON Points";
+            }*/
+            loadMarkersFunc(true);
+        }
+
+        function loadMarkersFunc(first) {
+            var geojsonurl = document.getElementById('geojsonurl').value;
+            loadAPISENSData(geojsonurl, first);
+        }
+
+        function applyFilters(b, f) {
+            // Check for building / floor dependant layer
+            for (var i = 0; i < layerIds.length; i++) {
+                // Get current filter
+                var _filter = map.getFilter(layerIds[i]);
+                // Create a new filter object
+                var fs = JSON.stringify(_filter);
+                var filter = JSON.parse(fs);
+                // Change filter values to match selected building / floor
+                for (var j = 0; j < filter.length; j++) {
+                    var filterpart = filter[j];
+                    if (filterpart instanceof Array) {
+                        if (filterpart.length >= 2) {
+                            if (filterpart[1].indexOf('locationbuilding') >= 0) {
+                                filterpart[2] = b;
+                            }
+                            else if (filterpart[1].indexOf('locationfloor') >= 0) {
+                                filterpart[2] = f;
+                            }
+                        }
                     }
                 }
-                // Load venue GL style template
-                loadJSON(venue.styles + '?ts=' + new Date().getTime(), function (err, style) {
-                    // console.log(style);
-                    if (style && venue.features) {
-                        // load venue features
-                        loadJSON(venue.features + '?ts=' + new Date().getTime(), function (err, features) {
-                            // console.log(features);
-                            // Change venue source to geojson
-                            delete style.sources.venue.url; // Do not use tilejson venue url
-                            style.sources.venue.type = "geojson";
-                            style.sources.venue.data = features;
-                            style.sources.venue.maxzoom = 22;
-                            style.sources.venue.tolerance = 0.001;
-                            style.sources.venue.buffer = 256;
-                            // Set urls to local server if not using mapbox source
-                            if (style.sources.composite.url.indexOf('mapbox://') == -1) {
-                                delete style.sources.composite.url; // Do not use tilejson url
-                                style.sources.composite.tiles = [baseurl + "/basemap/{z}/{x}/{y}.pbf"];
-                                style.sources.composite.maxzoom = 17;
-                                style.sources.composite.minzoom = 5;
-                            }
-                            style.sprite = style.sprite.replace("{baseurl}", baseurl);
-                            style.glyphs = style.glyphs.replace("{baseurl}", baseurl);
-                            // Save layers to set filter at runtime
-                            layerIds = [];
-                            for (var i = 0; i < style.layers.length; i++) {
-                                var l = style.layers[i];
-                                if (l.id.indexOf('{location}') >= 0) {
-                                    layerIds.push(l.id);
-                                    if (l.type == "symbol") {
-                                        l.layout["text-allow-overlap"] = false;
-                                        l.layout["icon-allow-overlap"] = false;
+                // Apply filter to layer
+                map.setFilter(layerIds[i], filter);
+            }
+        }
+
+        function changefloor(b, f) {
+            if (b == undefined) b = '';
+            if (f == undefined) f = '';
+            currentbuilding = b;
+            currentfloor = f;
+            applyFilters(currentbuilding, currentfloor);
+            // If outdoor, apply no classes
+            if (b == "") {
+                map.setClasses([]);
+            }
+            else {
+                // If indoor, apply indoor classes (used to hide some outdoor features if needed)
+                map.setClasses(["indoor"]);
+            }
+        }
+
+        function loadVenue(apikey, venueid, callback) {
+            var baseurl = "https://api.geolys.io/v1/venuesrevisions/";
+            var url = baseurl + "/" + venueid + "?api_key=" + apikey;
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.onerror = function (e) {
+                callback(e);
+            };
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+                    var data;
+                    try {
+                        data = JSON.parse(xhr.response);
+                    } catch (err) {
+                        return callback(err);
+                    }
+                    callback(null, data);
+                } else {
+                    callback(xhr.statusText);
+                }
+            };
+            xhr.send();
+        }
+
+        function loadJSON(url, callback, cors) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', url, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.onerror = function (e) {
+                callback(e);
+            };
+            xhr.onload = function () {
+                if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+                    var data;
+                    try {
+                        data = JSON.parse(xhr.response);
+                    } catch (err) {
+                        return callback(err);
+                    }
+                    callback(null, data);
+                } else {
+                    callback(xhr.statusText);
+                }
+            };
+            xhr.send();
+        }
+
+        //function onPlayButtonClick() {
+        //    if (playstatus == 1) {
+        //        document.getElementById('playbtn').value = "Stopped";
+        //        playstatus = 0;
+        //    }
+        //    else {
+        //        playstatus = 1;
+        //        playFunc(0);
+        //    }
+        //}
+        //function resetPlay() {
+        //    playstatus = 0;
+        //    document.getElementById('playbtn').value = "Start";
+        //    document.getElementById('playbtn').style.display = "";
+        //    start = 0;
+        //    markerIndex = 0;
+        //}
+
+        function playFunc(timestamp) {
+            //if(playstatus == 0) return;
+            if (timestamp - start > 1000) {
+                start = timestamp;
+                //markerIndex += 1;
+                //markerIndex = Math.min(markerIndex, markers.features.length - 1);
+                //document.getElementById('playbtn').value = "Running (" + markerIndex + " / " + (markers.features.length - 1) + ")";
+                loadMarkersFunc(false);
+            }
+            requestAnimationFrame(playFunc);
+        }
+
+        function updateMarkersOnMap() {
+            var currentTime = new Date();
+            var passTime = new Date();
+
+            var tab_id = [];
+            for (var i = 0; i < markers.features.length; i++) {
+                var f = markers.features[i];
+                if (f.geometry.type == "Point") {
+                    if (!findID(tab_id, markers.subjectId)) {
+                        tab_id.push(markers.subjectId);
+                    }
+                }
+            }
+            var indice = 1;
+            //thinking code
+            markersToDisplay.features = [];
+            for (var i = 0; i < tab_id.length; i++) {
+                var index = 0;
+                var lastindex = 0;
+                for (var j = 0; j < markers.features.length; j++) {
+                    if (markers.subjectId == tab_id[i]) {
+                        index = j;
+                        lastindex = findLastIndex(tab_id[i], j);
+                        for (var k = index; k <= lastindex; k++) {
+                            //if (k==lastindex) markers.features[k].properties.color = "#ff0000";
+                            //else markers.features[k].properties.color = "#0000ff";
+                            //markers.features[k].properties.opacity = (k - index + 1) / (lastindex - index + 1);
+
+                            markers.features[k].properties.color = markers.color;
+                            markersToDisplay.features.push(markers.features[k]);
+
+                            console.log("SET DATA");
+                            map.getSource("markers").setData(markersToDisplay);
+
+                            function myLoop() {
+                                setTimeout(function () {
+
+
+                                    indice++;
+                                    if (indice < 10) {
+                                        myLoop();
                                     }
-                                    l.layout["visibility"] = "visible";
-                                    // Add paint style from paint location style
-                                    l.paint = l["paint.{location}"];
+                                }, 3000)
+                            }
+
+                            myLoop();
+
+                        }
+                        j = j + lastindex - index + 1;
+                    }
+                }
+            }
+
+            // Update
+
+        }
+
+        function findLastIndex(appuserid, feature_id) {
+            var save = 0;
+            for (var i = feature_id; i < markers.features.length; i++) {
+                if (markers.subjectId == appuserid)
+                    save = i;
+            }
+            return save;
+        }
+
+        function findID(tab, appuserid) {
+            for (var i = 0; i < tab.length; i++) {
+                if (tab[i] == appuserid)
+                    return true;
+            }
+            return false;
+        }
+
+        function loadAPISENSData(url, first) {
+
+            loadJSON(url, function (err, _markers) {
+
+                console.log(_markers);
+
+                if (_markers) {
+
+                    //markers = {};
+                    //markers.type = "FeatureCollection";
+                    ////_markers = FeatureCollection
+                    markers = _markers;
+
+                    //for (var i = 0; i < _markers.features.length; i++) {
+                    //    markers.features[i] = _markers.features[i];
+                    //}
+
+                    // Flatten building and floor
+                    for (var i = 0; i < markers.features.length; i++) {
+                        var f = markers.features[i];
+                        var v1 = f.geometry.coordinates[0];
+                        var v2 = f.geometry.coordinates[1];
+                        f.geometry.coordinates[0] = v2;
+                        f.geometry.coordinates[1] = v1;
+                        //f.geometry = {};
+                        //f.geometry.type = "Point";
+                        //f.geometry.coordinates = [f.lat, f.lon];
+
+                        //f.properties = {};
+                        //f.properties.location = {};
+                        f.properties.locationbuilding = f.properties.building;
+                        f.properties.locationfloor = f.properties.floor;
+                        //f.properties.appuserid = markers.subjectId;
+                    }
+
+                    console.log(markers);
+
+                    // Add layers in layers list
+                    var found = false;
+                    for (var i = 0; i < layerIds.length; i++) {
+                        if (layerIds[i] == "circles") {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (found == false) layerIds.push("circles");
+
+                    if (!map.getSource("markers")) {
+                        map.addSource("markers", {
+                            "type": "geojson",
+                            "maxzoom": 22,
+                            "data": markers
+                        });
+
+
+                        map.addLayer({
+                            "id": "circles",
+                            "type": "circle",
+                            "source": "markers",
+                            "filter": ["all",
+                                [
+                                    "==",
+                                    "locationbuilding",
+                                    "{building}"
+                                ],
+                                [
+                                    "==",
+                                    "locationfloor",
+                                    "{floor}"
+                                ]
+                            ],
+                            "paint": {
+                                "circle-radius": 3,
+                                "circle-color": {
+                                    "property": "color",
+                                    "type": "identity"
+                                },
+                                "circle-opacity": {
+                                    "property": "opacity",
+                                    "type": "identity"
                                 }
                             }
-                            mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
-                            // Add map
-                            map = new mapboxgl.Map({
-                                container: 'map', // container id
-                                style: style,
-                                minZoom: 14,
-                                maxZoom: 22,
-                                center: [venue.defaultlon, venue.defaultlat], // starting position
-                                zoom: venue.defaultzoom // starting zoom
-                            });
-                            //map.addControl(new mapboxgl.Navigation());
-                            map.on('style.load', function () {
-                            });
-                            // When a click event occurs near a marker icon, open a popup at the location of
-                            // the feature, with description HTML from its properties.
-                            map.on("click", function (e) {
-                                var features = map.queryRenderedFeatures(e.point, {layers: layerIds});
-                                if (!features.length) return;
-                                var feature = features[0];
-                                console.log(feature);
-                                new mapboxgl.Popup()
-                                    .setLngLat(feature.geometry.coordinates)
-                                    .setHTML(feature.properties.description)
-                                    .addTo(map);
-                            });
-                            // Use the same approach as above to indicate that the symbols are clickable
-                            // by changing the cursor style to 'pointer'.
-                            map.on("mousemove", function (e) {
-                                /*                        var features = map.queryRenderedFeatures(e.point, { layers: [ 'markers'] });
-                                                                map.getCanvas().style.cursor = (!err && features.length) ? 'pointer' : '';
-                                */
-                            });
                         });
                     }
-                });
-            }
-        });
-    }
+                    console.log("map.getSource");
+                    console.log(map.getSource("markers"));
+                    updateMarkersOnMap();
+                    applyFilters(currentbuilding, currentfloor);
 
-    function onLoadGeoJSONButtonClick() {
-        /*if(timer) {
-            clearInterval(timer);
-            document.getElementById('geojsonbtn').value = "Load GeoJSON Points";
-            timer = null;
-        }
-        else {
-            timer = setInterval(loadMarkersFunc, 2000);
-            document.getElementById('geojsonbtn').value = "Stop GeoJSON Points";
-        }*/
-        loadMarkersFunc(true);
-    }
-
-    function loadMarkersFunc(first) {
-        var geojsonurl = document.getElementById('geojsonurl').value;
-        loadAPISENSData(geojsonurl, first);
-    }
-
-    function applyFilters(b, f) {
-        // Check for building / floor dependant layer
-        for (var i = 0; i < layerIds.length; i++) {
-            // Get current filter
-            var _filter = map.getFilter(layerIds[i]);
-            // Create a new filter object
-            var fs = JSON.stringify(_filter);
-            var filter = JSON.parse(fs);
-            // Change filter values to match selected building / floor
-            for (var j = 0; j < filter.length; j++) {
-                var filterpart = filter[j];
-                if (filterpart instanceof Array) {
-                    if (filterpart.length >= 2) {
-                        if (filterpart[1].indexOf('locationbuilding') >= 0) {
-                            filterpart[2] = b;
-                        }
-                        else if (filterpart[1].indexOf('locationfloor') >= 0) {
-                            filterpart[2] = f;
-                        }
-                    }
+                    // if (first) playFunc(0);
                 }
+            }, true);
+
+        }
+
+        function drawTrajectoire(geojson) {
+            // Flatten building and floor
+            // markers = geojson;
+
+            console.log(geojson);
+
+            var allFeatures = geojson.features;
+
+            //for (var i = 0; i < geojson.features.length; i++) {
+            //    var myCoordinate = geojson.features[i].geometry.coordinates;
+            //    allCoordinates.push(myCoordinate);
+            //}
+
+            
+
+            console.log("ALL COORDINATES TAB");
+            console.log(allFeatures);
+            console.log("GEOJSON WITH ONLY 1 FEATURES");
+            console.log(geojson);
+
+            for (var i = 0; i < allFeatures.length; i++) {
+                var f = allFeatures[i];
+                var v1 = f.geometry.coordinates[0];
+                var v2 = f.geometry.coordinates[1];
+                f.geometry.coordinates[0] = v2;
+                f.geometry.coordinates[1] = v1;
+                //f.geometry = {};
+                //f.geometry.type = "Point";
+                //f.geometry.coordinates = [f.lat, f.lon];
+
+                //f.properties = {};
+                //f.properties.location = {};
+                f.properties.locationbuilding = f.properties.building;
+                f.properties.locationfloor = f.properties.floor;
+                //f.properties.appuserid = markers.subjectId;
             }
-            // Apply filter to layer
-            map.setFilter(layerIds[i], filter);
-        }
-    }
+            geojson.features = [];
+            geojson.features.push(allFeatures[0]);
 
-    function changefloor(b, f) {
-        if (b == undefined) b = '';
-        if (f == undefined) f = '';
-        currentbuilding = b;
-        currentfloor = f;
-        applyFilters(currentbuilding, currentfloor);
-        // If outdoor, apply no classes
-        if (b == "") {
-            map.setClasses([]);
-        }
-        else {
-            // If indoor, apply indoor classes (used to hide some outdoor features if needed)
-            map.setClasses(["indoor"]);
-        }
-    }
+            console.log(JSON.stringify(geojson));
 
-    function loadVenue(apikey, venueid, callback) {
-        var baseurl = "https://api.geolys.io/v1/venuesrevisions/";
-        var url = baseurl + "/" + venueid + "?api_key=" + apikey;
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.setRequestHeader('Accept', 'application/json');
-        xhr.onerror = function (e) {
-            callback(e);
-        };
-        xhr.onload = function () {
-            if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
-                var data;
-                try {
-                    data = JSON.parse(xhr.response);
-                } catch (err) {
-                    return callback(err);
-                }
-                callback(null, data);
-            } else {
-                callback(xhr.statusText);
-            }
-        };
-        xhr.send();
-    }
-
-    function loadJSON(url, callback, cors) {
-        var xhr = new XMLHttpRequest();
-        xhr.open('GET', url, true);
-        xhr.setRequestHeader('Accept', 'application/json');
-        xhr.onerror = function (e) {
-            callback(e);
-        };
-        xhr.onload = function () {
-            if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
-                var data;
-                try {
-                    data = JSON.parse(xhr.response);
-                } catch (err) {
-                    return callback(err);
-                }
-                callback(null, data);
-            } else {
-                callback(xhr.statusText);
-            }
-        };
-        xhr.send();
-    }
-
-    //function onPlayButtonClick() {
-    //    if (playstatus == 1) {
-    //        document.getElementById('playbtn').value = "Stopped";
-    //        playstatus = 0;
-    //    }
-    //    else {
-    //        playstatus = 1;
-    //        playFunc(0);
-    //    }
-    //}
-    //function resetPlay() {
-    //    playstatus = 0;
-    //    document.getElementById('playbtn').value = "Start";
-    //    document.getElementById('playbtn').style.display = "";
-    //    start = 0;
-    //    markerIndex = 0;
-    //}
-
-    function playFunc(timestamp) {
-        //if(playstatus == 0) return;
-        if (timestamp - start > 1000) {
-            start = timestamp;
-            //markerIndex += 1;
-            //markerIndex = Math.min(markerIndex, markers.features.length - 1);
-            //document.getElementById('playbtn').value = "Running (" + markerIndex + " / " + (markers.features.length - 1) + ")";
-            loadMarkersFunc(false);
-        }
-        requestAnimationFrame(playFunc);
-    }
-
-    function updateMarkersOnMap() {
-        var currentTime = new Date();
-        var passTime = new Date();
-
-        var tab_id = [];
-        for (var i = 0; i < markers.features.length; i++) {
-            var f = markers.features[i];
-            if (f.geometry.type == "Point") {
-                if (!findID(tab_id, markers.subjectId)) {
-                    tab_id.push(markers.subjectId);
-                }
-            }
-        }
-        var indice = 1;
-        //thinking code
-        markersToDisplay.features = [];
-        for (var i = 0; i < tab_id.length; i++) {
-            var index = 0;
-            var lastindex = 0;
-            for (var j = 0; j < markers.features.length; j++) {
-                if (markers.subjectId == tab_id[i]) {
-                    index = j;
-                    lastindex = findLastIndex(tab_id[i], j);
-                    for (var k = index; k <= lastindex; k++) {
-                        //if (k==lastindex) markers.features[k].properties.color = "#ff0000";
-                        //else markers.features[k].properties.color = "#0000ff";
-                        //markers.features[k].properties.opacity = (k - index + 1) / (lastindex - index + 1);
-
-                        markers.features[k].properties.color = markers.color;
-                        markersToDisplay.features.push(markers.features[k]);
-
-                        console.log("SET DATA");
-                        map.getSource("markers").setData(markersToDisplay);
-
-                        function myLoop() {
-                            setTimeout(function () {
-
-
-                                indice++;
-                                if (indice < 10) {
-                                    myLoop();
-                                }
-                            }, 3000)
-                        }
-
-                        myLoop();
-
-                    }
-                    j = j + lastindex - index + 1;
-                }
-            }
-        }
-
-        // Update
-
-    }
-
-    function findLastIndex(appuserid, feature_id) {
-        var save = 0;
-        for (var i = feature_id; i < markers.features.length; i++) {
-            if (markers.subjectId == appuserid)
-                save = i;
-        }
-        return save;
-    }
-
-    function findID(tab, appuserid) {
-        for (var i = 0; i < tab.length; i++) {
-            if (tab[i] == appuserid)
-                return true;
-        }
-        return false;
-    }
-
-    function loadAPISENSData(url, first) {
-
-        loadJSON(url, function (err, _markers) {
-
-            console.log(_markers);
-
-            if (_markers) {
-
-                //markers = {};
-                //markers.type = "FeatureCollection";
-                ////_markers = FeatureCollection
-                markers = _markers;
-
-                //for (var i = 0; i < _markers.features.length; i++) {
-                //    markers.features[i] = _markers.features[i];
-                //}
-
-                // Flatten building and floor
-                for (var i = 0; i < markers.features.length; i++) {
-                    var f = markers.features[i];
-                    var v1 = f.geometry.coordinates[0];
-                    var v2 = f.geometry.coordinates[1];
-                    f.geometry.coordinates[0] = v2;
-                    f.geometry.coordinates[1] = v1;
-                    //f.geometry = {};
-                    //f.geometry.type = "Point";
-                    //f.geometry.coordinates = [f.lat, f.lon];
-
-                    //f.properties = {};
-                    //f.properties.location = {};
-                    f.properties.locationbuilding = f.properties.building;
-                    f.properties.locationfloor = f.properties.floor;
-                    //f.properties.appuserid = markers.subjectId;
-                }
-
-                console.log(markers);
-
-                // Add layers in layers list
-                var found = false;
-                for (var i = 0; i < layerIds.length; i++) {
-                    if (layerIds[i] == "circles") {
-                        found = true;
-                        break;
-                    }
-                }
-                if (found == false) layerIds.push("circles");
-
-                if (!map.getSource("markers")) {
-                    map.addSource("markers", {
-                        "type": "geojson",
-                        "maxzoom": 22,
-                        "data": markers
-                    });
-
-
-                    map.addLayer({
-                        "id": "circles",
-                        "type": "circle",
-                        "source": "markers",
-                        "filter": ["all",
-                            [
-                                "==",
-                                "locationbuilding",
-                                "{building}"
-                            ],
-                            [
-                                "==",
-                                "locationfloor",
-                                "{floor}"
-                            ]
-                        ],
-                        "paint": {
-                            "circle-radius": 3,
-                            "circle-color": {
-                                "property": "color",
-                                "type": "identity"
-                            },
-                            "circle-opacity": {
-                                "property": "opacity",
-                                "type": "identity"
-                            }
-                        }
-                    });
-                }
-                console.log("map.getSource");
-                console.log(map.getSource("markers"));
-                updateMarkersOnMap();
-                applyFilters(currentbuilding, currentfloor);
-
-                // if (first) playFunc(0);
-            }
-        }, true);
-
-    }
-
-    function drawTrajectoire(geojson) {
-        // Flatten building and floor
-        // markers = geojson;
-        for (var i = 0; i < geojson.features.length; i++) {
-            var f = geojson.features[i];
-            var v1 = f.geometry.coordinates[0];
-            var v2 = f.geometry.coordinates[1];
-            f.geometry.coordinates[0] = v2;
-            f.geometry.coordinates[1] = v1;
-            //f.geometry = {};
-            //f.geometry.type = "Point";
-            //f.geometry.coordinates = [f.lat, f.lon];
-
-            //f.properties = {};
-            //f.properties.location = {};
-            f.properties.locationbuilding = f.properties.building;
-            f.properties.locationfloor = f.properties.floor;
-            //f.properties.appuserid = markers.subjectId;
-        }
-
-        // console.log(JSON.stringify(geojson));
-
-        // Add layers in layers list
-        let found = false;
-        for (let i = 0; i < layerIds.length; i++) {
-            if (layerIds[i] === geojson.layerid) {
-                found = true;
-                break;
-            }
-        }
-        if (found === false) layerIds.push(geojson.layerid);
-
-        if (!map.getSource("trajectoire")) {
-            map.addSource("trajectoire", {
-                "type": "geojson",
-                "maxzoom": 22,
-                "data": geojson
-            });
-        } else {
-            map.getSource("trajectoire").setData(geojson);
-        }
-
-
-        map.addLayer({
-            "id": geojson.layerid,
-            "type": "circle",
-            "source": "trajectoire",
-            "filter": ["all",
-                [
-                    "==",
-                    "locationbuilding",
-                    "{building}"
-                ],
-                [
-                    "==",
-                    "locationfloor",
-                    "{floor}"
-                ]
-            ],
-            "paint": {
-                "circle-radius": 3,
-                "circle-color": geojson.color,
-                "circle-opacity": {
-                    "property": "opacity",
-                    "type": "identity"
-                }
-            }
-        });
-
-        // updateMarkersOnMap();
-        applyFilters(currentbuilding, currentfloor);
-    }
-
-    function hideLayer(id) {
-        if (map.getLayer(id)) {
-            map.removeLayer(id);
+            // Add layers in layers list
+            let found = false;
             for (let i = 0; i < layerIds.length; i++) {
-                if (layerIds[i] === id) {
-                    layerIds.splice(i, 1);
+                if (layerIds[i] === geojson.layerid) {
+                    found = true;
                     break;
                 }
             }
+            if (found === false) layerIds.push(geojson.layerid);
+
+            if (!map.getSource("trajectoire")) {
+                map.addSource("trajectoire", {
+                    "type": "geojson",
+                    "maxzoom": 22,
+                    "data": geojson
+                });
+            } else {
+                console.log("Source OK => set data");
+                map.getSource("trajectoire").setData(geojson);
+            }
+
+            console.log("After get source");
+
+            map.addLayer({
+                "id": geojson.layerid,
+                "type": "circle",
+                "source": "trajectoire",
+                "filter": ["all",
+                    [
+                        "==",
+                        "locationbuilding",
+                        "{building}"
+                    ],
+                    [
+                        "==",
+                        "locationfloor",
+                        "{floor}"
+                    ]
+                ],
+                "paint": {
+                    "circle-radius": 3,
+                    "circle-color": geojson.color,
+                    "circle-opacity": {
+                        "property": "opacity",
+                        "type": "identity"
+                    }
+                }
+            });
+
+            console.log("After add layer");
+
+            var i = 0;
+            var timer = window.setInterval(function () {
+                if (i < allFeatures.length) {
+                    geojson.features.push(allFeatures[i]);
+                    map.getSource('trajectoire').setData(geojson);
+                    console.log("setData n° : "+i);
+                    i++;
+                } else {
+                    window.clearInterval(timer);
+                }
+            }, 300);
+
+            // updateMarkersOnMap();
+            applyFilters(currentbuilding, currentfloor);
         }
-    }
 
-    //function loadMarkers(url) {
-    //    loadJSON(url, function (err, _markers) {
+        function hideLayer(id) {
+            if (map.getLayer(id)) {
+                map.removeLayer(id);
+                for (let i = 0; i < layerIds.length; i++) {
+                    if (layerIds[i] === id) {
+                        layerIds.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+        }
 
-    //        console.log(_markers);
+            //function loadMarkers(url) {
+            //    loadJSON(url, function (err, _markers) {
 
-    //        if (_markers) {
-    //            resetPlay();
-    //            markers = _markers;
-    //            // Flatten building and floor
-    //            for (var i = 0; i < markers.features.length; i++) {
-    //                var f = markers.features[i];
+            //        console.log(_markers);
 
-    //                f.properties.locationbuilding = f.properties.location.building;
-    //                f.properties.locationfloor = f.properties.location.floor;
-    //            }
+            //        if (_markers) {
+            //            resetPlay();
+            //            markers = _markers;
+            //            // Flatten building and floor
+            //            for (var i = 0; i < markers.features.length; i++) {
+            //                var f = markers.features[i];
 
-    //            // Add layers in layers list
-    //            var found = false;
-    //            for (var i = 0; i < layerIds.length; i++) {
-    //                if (layerIds[i] == "circles") {
-    //                    found = true;
-    //                    break;
-    //                }
-    //            }
-    //            if (found == false) layerIds.push("circles");
+            //                f.properties.locationbuilding = f.properties.location.building;
+            //                f.properties.locationfloor = f.properties.location.floor;
+            //            }
 
-    //            if (!map.getSource("markers")) {
-    //                console.log(markers);
-    //                map.addSource("markers", {
-    //                    "type": "geojson",
-    //                    "maxzoom": 22,
-    //                    "data": markers
-    //                });
+            //            // Add layers in layers list
+            //            var found = false;
+            //            for (var i = 0; i < layerIds.length; i++) {
+            //                if (layerIds[i] == "circles") {
+            //                    found = true;
+            //                    break;
+            //                }
+            //            }
+            //            if (found == false) layerIds.push("circles");
 
-    //                map.addLayer({
-    //                    "id": "circles",
-    //                    "type": "circle",
-    //                    "source": "markers",
-    //                    "filter": ["all",
-    //                        [
-    //                            "==",
-    //                            "locationbuilding",
-    //                            "{building}"
-    //                        ],
-    //                        [
-    //                            "==",
-    //                            "locationfloor",
-    //                            "{floor}"
-    //                        ]
-    //                    ],
-    //                    "paint": {
-    //                        "circle-radius": 3,
-    //                        "circle-color": {
-    //                            "property": "color",
-    //                            "type": "identity"
-    //                        },
-    //                        "circle-opacity": {
-    //                            "property": "opacity",
-    //                            "type": "identity"
-    //                        }
-    //                    }
-    //                });
-    //            }
-    //            updateMarkersOnMap();
-    //            applyFilters(currentbuilding, currentfloor);
-    //        }
-    //    });
-    //}
-</script>
+            //            if (!map.getSource("markers")) {
+            //                console.log(markers);
+            //                map.addSource("markers", {
+            //                    "type": "geojson",
+            //                    "maxzoom": 22,
+            //                    "data": markers
+            //                });
 
-<script type="application/javascript" src="assets/js/sidebar.js"></script>
+            //                map.addLayer({
+            //                    "id": "circles",
+            //                    "type": "circle",
+            //                    "source": "markers",
+            //                    "filter": ["all",
+            //                        [
+            //                            "==",
+            //                            "locationbuilding",
+            //                            "{building}"
+            //                        ],
+            //                        [
+            //                            "==",
+            //                            "locationfloor",
+            //                            "{floor}"
+            //                        ]
+            //                    ],
+            //                    "paint": {
+            //                        "circle-radius": 3,
+            //                        "circle-color": {
+            //                            "property": "color",
+            //                            "type": "identity"
+            //                        },
+            //                        "circle-opacity": {
+            //                            "property": "opacity",
+            //                            "type": "identity"
+            //                        }
+            //                    }
+            //                });
+            //            }
+            //            updateMarkersOnMap();
+            //            applyFilters(currentbuilding, currentfloor);
+            //        }
+            //    });
+            //}
+    </script>
+
+    <script type="application/javascript" src="assets/js/sidebar.js"></script>
 </body>
 </html>
