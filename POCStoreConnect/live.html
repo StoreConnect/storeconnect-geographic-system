@@ -610,9 +610,6 @@
     }
 
     function drawTrajectoire(geojson) {
-        //show loader
-        showMapLoader();
-
         /******************************************
          * Build a layer for circles with geojson
          *****************************************/
@@ -749,8 +746,6 @@
 
         // updateMarkersOnMap();
         applyFilters(currentbuilding, currentfloor);
-
-        hideMapLoader();
     }
 
     /**
