@@ -71,13 +71,17 @@
             <div id="menu">
                 <div id="apicapteur">
                     <span class="navbar-brand">API CAPTEUR</span>
-                    <img src="assets/loader.gif" class="col-12 loader-capteur"/>
+                    <div class="col-12">
+                        <div class="loader-capteur"></div>
+                    </div>
                     <div id="apicapteurmenu">
                     </div>
                 </div>
                 <div id="apiservice">
                     <span class="navbar-brand">API SERVICE</span>
-                    <img src="assets/loader.gif" class="col-12 loader-service"/>
+                    <div class="col-12">
+                        <div class="loader-service"></div>
+                    </div>
                     <div id="apiservicemenu">
                     </div>
                 </div>
@@ -94,8 +98,20 @@
             <!--<input type="button" id="playbtn" value="Start" style="display:none" onclick="onPlayButtonClick()"/>-->
             <div align="center" id="buttons">
             </div>
+            <div class="col-4">
+                <button role="button" class="btn btn-sm btn-outline-primary showCircles active">
+                    Show circles
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary showLines">
+                    Show lines
+                    <i class="fas fa-chart-line"></i>
+                </button>
+            </div>
             <div id='map'>
-
+                <div class="col-12 loader-map-wrapper">
+                    <div class="loader-map"></div>
+                </div>
             </div>
         </div>
 
@@ -133,7 +149,26 @@
     document.querySelector('#venueid').value = 95;
     onLoadButtonClick();
 
+    //Handle layer type button click (circles or lines)
+    let layerMode = 0; //circle by default
+    document.querySelector(".showCircles").addEventListener("click", function () {
+        this.classList.toggle("active");
+        if (this.classList.contains("active")) {
+            layerMode = 0;
+            document.querySelector(".showLines").classList.toggle("active");
+        }
+    });
+    document.querySelector(".showLines").addEventListener("click", function () {
+        this.classList.toggle("active");
+        if (this.classList.contains("active")) {
+            layerMode = 0;
+            document.querySelector(".showCircles").classList.toggle("active");
+        }
+    });
+
+
     function onLoadButtonClick() {
+        showMapLoader();
         apikey = document.getElementById('apikey').value;
         venueid = document.getElementById('venueid').value;
         // Load geolys venue
@@ -223,6 +258,8 @@
                                                                 map.getCanvas().style.cursor = (!err && features.length) ? 'pointer' : '';
                                 */
                             });
+
+                            hideMapLoader();
                         });
                     }
                 });
@@ -539,10 +576,13 @@
     }
 
     function drawTrajectoire(geojson) {
+        //show loader
+        showMapLoader();
+
         // Flatten building and floor
         // markers = geojson;
 
-        var allFeatures = geojson.features;
+        // var allFeatures = geojson.features;
 
         //for (var i = 0; i < geojson.features.length; i++) {
         //    var myCoordinate = geojson.features[i].geometry.coordinates;
@@ -550,26 +590,41 @@
         //}
 
 
-        for (var i = 0; i < allFeatures.length; i++) {
-            var f = allFeatures[i];
-            var v1 = f.geometry.coordinates[0];
-            var v2 = f.geometry.coordinates[1];
-            f.geometry.coordinates[0] = v2;
-            f.geometry.coordinates[1] = v1;
-            //f.geometry = {};
-            //f.geometry.type = "Point";
-            //f.geometry.coordinates = [f.lat, f.lon];
-
-            //f.properties = {};
-            //f.properties.location = {};
-            f.properties.locationbuilding = "" + f.properties.building;
-            f.properties.locationfloor = "" + f.properties.floor;
-            //f.properties.appuserid = markers.subjectId;
-        }
+        // for (var i = 0; i < allFeatures.length; i++) {
+        //     var f = allFeatures[i];
+        //     // var v1 = f.geometry.coordinates[0];
+        //     // var v2 = f.geometry.coordinates[1];
+        //     // f.geometry.coordinates[0] = v2;
+        //     // f.geometry.coordinates[1] = v1;
+        //     //f.geometry = {};
+        //     //f.geometry.type = "Point";
+        //     //f.geometry.coordinates = [f.lat, f.lon];
+        //
+        //     //f.properties = {};
+        //     //f.properties.location = {};
+        //     f.properties.locationbuilding = "" + f.properties.building;
+        //     f.properties.locationfloor = "" + f.properties.floor;
+        //     //f.properties.appuserid = markers.subjectId;
+        // }
         // geojson.features = [];
         // geojson.features.push(allFeatures[0]);
 
 
+
+        // //rebuild json for lines
+        // let geojsonLine = {};
+        // geojsonLine.type = geojson.type;
+        // geojsonLine.features = [];
+        // geojsonLine.features[0] = {};
+        // geojsonLine.features[0].type = "Feature";
+        // geojsonLine.features[0].geometry = {};
+        // geojsonLine.features[0].geometry.type = "LineString";
+        // geojsonLine.features[0].geometry.coordinates =[];
+        // geojsonLine.features[0].properties = geojson.features[0].properties;
+        // geojsonLine.layerid = geojson.layerid +"-line";
+        // for (let f of geojson.features) {
+        //     geojsonLine.features[0].geometry.coordinates.push(f.geometry.coordinates);
+        // }
 
         // Add layers in layers list
         let found = false;
@@ -581,28 +636,38 @@
         }
         if (!found) layerIds.push(geojson.layerid);
 
+        // //for geojsonLine
+        // found = false;
+        // for (let i = 0; i < layerIds.length; i++) {
+        //     if (layerIds[i] === geojsonLine.layerid) {
+        //         found = true;
+        //         break;
+        //     }
+        // }
+        // if (!found) layerIds.push(geojsonLine.layerid);
+
         if (map.getLayer(geojson.layerid)) {
             //Layer already exists, just show it
-            console.log("Layer " + geojson.layerid + " already exists, showing it");
+            // console.log("Layer " + geojson.layerid + " already exists, showing it");
             map.setLayoutProperty(geojson.layerid, "visibility", "visible");
         } else {
             //Layer does'nt exists yet, create it
-            if (!map.getSource("trajectoire")) {
-                console.log("Creating source trajectoire");
-                map.addSource("trajectoire", {
+            if (!map.getSource("trajectoire-" + geojson.layerid)) {
+                // console.log("Creating source trajectoire-"+geojson.layerid);
+                map.addSource("trajectoire-" + geojson.layerid, {
                     "type": "geojson",
                     "maxzoom": 22,
                     "data": geojson
                 });
             } else {
-                console.log("adding data from geojson to datasource");
-                map.getSource("trajectoire").setData(geojson);
+                // console.log("adding data from geojson to datasource trajectoire-"+geojson.layerid);
+                map.getSource("trajectoire-" + geojson.layerid).setData(geojson);
             }
 
             map.addLayer({
                 "id": geojson.layerid,
                 "type": "circle",
-                "source": "trajectoire",
+                "source": "trajectoire-" + geojson.layerid,
                 "filter": ["all",
                     [
                         "==",
@@ -630,6 +695,64 @@
         }
 
 
+        // if (map.getLayer(geojsonLine.layerid)) {
+        //     //Layer already exists, just show it
+        //     // console.log("Layer " + geojson.layerid + " already exists, showing it");
+        //     map.setLayoutProperty(geojsonLine.layerid, "visibility", "visible");
+        // } else {
+        //     //Layer does'nt exists yet, create it
+        //     if (!map.getSource("trajectoire-" + geojsonLine.layerid)) {
+        //         // console.log("Creating source trajectoire-"+geojson.layerid);
+        //         map.addSource("trajectoire-" + geojsonLine.layerid, {
+        //             "type": "geojson",
+        //             "maxzoom": 22,
+        //             lineMetrics:true,
+        //             "data": geojsonLine
+        //         });
+        //     } else {
+        //         // console.log("adding data from geojson to datasource trajectoire-"+geojson.layerid);
+        //         map.getSource("trajectoire-" + geojsonLine.layerid).setData(geojsonLine);
+        //     }
+        //
+        //     map.addLayer({
+        //         "id": geojsonLine.layerid,
+        //         "type": "line",
+        //         "source": "trajectoire-" + geojsonLine.layerid,
+        //         "filter": ["all",
+        //             [
+        //                 "==",
+        //                 "locationbuilding",
+        //                 "{building}"
+        //             ],
+        //             [
+        //                 "==",
+        //                 "locationfloor",
+        //                 "{floor}"
+        //             ]
+        //         ],
+        //         "paint": {
+        //             'line-color': 'red',
+        //             'line-width': 14,
+        //             'line-gradient': [
+        //                 'interpolate',
+        //                 ['linear'],
+        //                 ['line-progress'],
+        //                 0, "blue",
+        //                 0.1, "royalblue",
+        //                 0.3, "cyan",
+        //                 0.5, "lime",
+        //                 0.7, "yellow",
+        //                 1, "red"
+        //             ]
+        //         },
+        //         "layout": {
+        //             'line-cap': 'round',
+        //             'line-join': 'round',
+        //             "visibility": (layerMode===1?"visible":"none")
+        //         }
+        //     });
+        // }
+
         // var i = 0;
         // var timer = window.setInterval(function () {
         //     if (i < allFeatures.length) {
@@ -644,9 +767,14 @@
 
         // updateMarkersOnMap();
         applyFilters(currentbuilding, currentfloor);
+
+        hideMapLoader();
     }
 
     function hideLayer(id) {
+        // if (layerMode===1) {
+        //     id+="-line";
+        // }
         if (map.getLayer(id)) {
             // map.removeLayer(id);
             // for (let i = 0; i < layerIds.length; i++) {
@@ -656,14 +784,16 @@
             //     }
             // }
             if (map.getLayoutProperty(id, "visibility") === "visible") {
-                console.log("hiding layer " + id);
+                // console.log("hiding layer " + id);
                 map.setLayoutProperty(id, "visibility", "none");
             } else {
-                console.log("Error hiding layer " + id);
+                // console.log("Error hiding layer " + id);
             }
         }
     }
 
+
+    /*
     //function loadMarkers(url) {
     //    loadJSON(url, function (err, _markers) {
 
@@ -732,6 +862,15 @@
     //        }
     //    });
     //}
+    */
+
+    function showMapLoader() {
+        document.querySelector(".loader-map-wrapper").style.display = "flex";
+    }
+
+    function hideMapLoader() {
+        document.querySelector(".loader-map-wrapper").style.display = "none";
+    }
 </script>
 <script type="application/javascript" src="assets/js/sidebar.js"></script>
 </body>

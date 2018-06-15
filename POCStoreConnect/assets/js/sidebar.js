@@ -264,6 +264,11 @@ function apiCapteurMenuClick(el) {
                 //refilter by subject here for camera datastream
                 if (item.result.subject.id === el.getAttribute("data-subject-id")) {
                     let location = item.result.location;
+                    let v1 = location.geometry.coordinates[0];
+                    location.geometry.coordinates[0] = location.geometry.coordinates[1];
+                    location.geometry.coordinates[1] = v1;
+                    location.properties.locationbuilding = "" + location.properties.building;
+                    location.properties.locationfloor = "" + location.properties.floor;
                     data.push(location);
                 }
             }
