@@ -156,13 +156,29 @@
         if (this.classList.contains("active")) {
             layerMode = 0;
             document.querySelector(".showLines").classList.toggle("active");
+            for (let id of layerIds) {
+                if (id.includes("geojson-data") && !id.includes("-line")) {
+                    showLayer(id);
+                } else if (id.includes("geojson-data")) {
+                    hideLayer(id);
+                }
+            }
+            applyFilters(currentbuilding,currentfloor);
         }
     });
     document.querySelector(".showLines").addEventListener("click", function () {
         this.classList.toggle("active");
         if (this.classList.contains("active")) {
-            layerMode = 0;
+            layerMode = 1;
             document.querySelector(".showCircles").classList.toggle("active");
+            for (let id of layerIds) {
+                if (id.includes("-line")) {
+                    showLayer(id);
+                } else if (id.includes("geojson-data")) {
+                    hideLayer(id);
+                }
+            }
+            applyFilters(currentbuilding,currentfloor);
         }
     });
 
@@ -611,20 +627,21 @@
 
 
 
-        // //rebuild json for lines
-        // let geojsonLine = {};
-        // geojsonLine.type = geojson.type;
-        // geojsonLine.features = [];
-        // geojsonLine.features[0] = {};
-        // geojsonLine.features[0].type = "Feature";
-        // geojsonLine.features[0].geometry = {};
-        // geojsonLine.features[0].geometry.type = "LineString";
-        // geojsonLine.features[0].geometry.coordinates =[];
-        // geojsonLine.features[0].properties = geojson.features[0].properties;
-        // geojsonLine.layerid = geojson.layerid +"-line";
-        // for (let f of geojson.features) {
-        //     geojsonLine.features[0].geometry.coordinates.push(f.geometry.coordinates);
-        // }
+        //rebuild json for lines
+        let geojsonLine = {};
+        geojsonLine.type = geojson.type;
+        geojsonLine.features = [];
+        geojsonLine.features[0] = {};
+        geojsonLine.features[0].type = "Feature";
+        geojsonLine.features[0].geometry = {};
+        geojsonLine.features[0].geometry.type = "LineString";
+        geojsonLine.features[0].geometry.coordinates =[];
+        geojsonLine.features[0].properties = geojson.features[0].properties;
+        geojsonLine.layerid = geojson.layerid +"-line";
+        geojsonLine.color = geojson.color;
+        for (let f of geojson.features) {
+            geojsonLine.features[0].geometry.coordinates.push(f.geometry.coordinates);
+        }
 
         // Add layers in layers list
         let found = false;
@@ -636,15 +653,15 @@
         }
         if (!found) layerIds.push(geojson.layerid);
 
-        // //for geojsonLine
-        // found = false;
-        // for (let i = 0; i < layerIds.length; i++) {
-        //     if (layerIds[i] === geojsonLine.layerid) {
-        //         found = true;
-        //         break;
-        //     }
-        // }
-        // if (!found) layerIds.push(geojsonLine.layerid);
+        //for geojsonLine
+        found = false;
+        for (let i = 0; i < layerIds.length; i++) {
+            if (layerIds[i] === geojsonLine.layerid) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) layerIds.push(geojsonLine.layerid);
 
         if (map.getLayer(geojson.layerid)) {
             //Layer already exists, just show it
@@ -689,69 +706,57 @@
                     }
                 },
                 "layout": {
-                    "visibility": "visible"
+                    "visibility": (layerMode===0?"visible":"none")
                 }
             });
         }
 
 
-        // if (map.getLayer(geojsonLine.layerid)) {
-        //     //Layer already exists, just show it
-        //     // console.log("Layer " + geojson.layerid + " already exists, showing it");
-        //     map.setLayoutProperty(geojsonLine.layerid, "visibility", "visible");
-        // } else {
-        //     //Layer does'nt exists yet, create it
-        //     if (!map.getSource("trajectoire-" + geojsonLine.layerid)) {
-        //         // console.log("Creating source trajectoire-"+geojson.layerid);
-        //         map.addSource("trajectoire-" + geojsonLine.layerid, {
-        //             "type": "geojson",
-        //             "maxzoom": 22,
-        //             lineMetrics:true,
-        //             "data": geojsonLine
-        //         });
-        //     } else {
-        //         // console.log("adding data from geojson to datasource trajectoire-"+geojson.layerid);
-        //         map.getSource("trajectoire-" + geojsonLine.layerid).setData(geojsonLine);
-        //     }
-        //
-        //     map.addLayer({
-        //         "id": geojsonLine.layerid,
-        //         "type": "line",
-        //         "source": "trajectoire-" + geojsonLine.layerid,
-        //         "filter": ["all",
-        //             [
-        //                 "==",
-        //                 "locationbuilding",
-        //                 "{building}"
-        //             ],
-        //             [
-        //                 "==",
-        //                 "locationfloor",
-        //                 "{floor}"
-        //             ]
-        //         ],
-        //         "paint": {
-        //             'line-color': 'red',
-        //             'line-width': 14,
-        //             'line-gradient': [
-        //                 'interpolate',
-        //                 ['linear'],
-        //                 ['line-progress'],
-        //                 0, "blue",
-        //                 0.1, "royalblue",
-        //                 0.3, "cyan",
-        //                 0.5, "lime",
-        //                 0.7, "yellow",
-        //                 1, "red"
-        //             ]
-        //         },
-        //         "layout": {
-        //             'line-cap': 'round',
-        //             'line-join': 'round',
-        //             "visibility": (layerMode===1?"visible":"none")
-        //         }
-        //     });
-        // }
+        if (map.getLayer(geojsonLine.layerid)) {
+            //Layer already exists, just show it
+            // console.log("Layer " + geojson.layerid + " already exists, showing it");
+            map.setLayoutProperty(geojsonLine.layerid, "visibility", "visible");
+        } else {
+            //Layer does'nt exists yet, create it
+            if (!map.getSource("trajectoire-" + geojsonLine.layerid)) {
+                // console.log("Creating source trajectoire-"+geojson.layerid);
+                map.addSource("trajectoire-" + geojsonLine.layerid, {
+                    "type": "geojson",
+                    "maxzoom": 22,
+                    "data": geojsonLine
+                });
+            } else {
+                // console.log("adding data from geojson to datasource trajectoire-"+geojson.layerid);
+                map.getSource("trajectoire-" + geojsonLine.layerid).setData(geojsonLine);
+            }
+
+            map.addLayer({
+                "id": geojsonLine.layerid,
+                "type": "line",
+                "source": "trajectoire-" + geojsonLine.layerid,
+                "filter": ["all",
+                    [
+                        "==",
+                        "locationbuilding",
+                        "{building}"
+                    ],
+                    [
+                        "==",
+                        "locationfloor",
+                        "{floor}"
+                    ]
+                ],
+                "paint": {
+                    'line-color': geojsonLine.color,
+                    'line-width': 5,
+                },
+                "layout": {
+                    'line-cap': 'round',
+                    'line-join': 'round',
+                    "visibility": (layerMode===1?"visible":"none")
+                }
+            });
+        }
 
         // var i = 0;
         // var timer = window.setInterval(function () {
@@ -772,17 +777,16 @@
     }
 
     function hideLayer(id) {
-        // if (layerMode===1) {
-        //     id+="-line";
-        // }
         if (map.getLayer(id)) {
-            // map.removeLayer(id);
-            // for (let i = 0; i < layerIds.length; i++) {
-            //     if (layerIds[i] === id) {
-            //         layerIds.splice(i, 1);
-            //         break;
-            //     }
-            // }
+            if (map.getLayoutProperty(id, "visibility") === "visible") {
+                // console.log("hiding layer " + id);
+                map.setLayoutProperty(id, "visibility", "none");
+            } else {
+                // console.log("Error hiding layer " + id);
+            }
+        }
+        id=id+"-line";
+        if (map.getLayer(id)) {
             if (map.getLayoutProperty(id, "visibility") === "visible") {
                 // console.log("hiding layer " + id);
                 map.setLayoutProperty(id, "visibility", "none");
@@ -792,6 +796,38 @@
         }
     }
 
+    function showLayer(id) {
+        if (map.getLayer(id)) {
+            if (map.getLayoutProperty(id, "visibility") === "none") {
+                // console.log("hiding layer " + id);
+                map.setLayoutProperty(id, "visibility", "visible");
+            } else {
+                // console.log("Error hiding layer " + id);
+            }
+        }
+    }
+
+    function removeLayer(id) {
+        if (map.getLayer(id)) {
+            map.removeLayer(id);
+            for (let i = 0; i < layerIds.length; i++) {
+                if (layerIds[i] === id) {
+                    layerIds.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        id=id+"-line";
+        if (map.getLayer(id)) {
+            map.removeLayer(id);
+            for (let i = 0; i < layerIds.length; i++) {
+                if (layerIds[i] === id) {
+                    layerIds.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    }
 
     /*
     //function loadMarkers(url) {
