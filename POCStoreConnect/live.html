@@ -4,8 +4,8 @@
     <meta charset='utf-8' />
     <title></title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.css' rel='stylesheet' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
     <link href='assets/css/bootstrap.min.css' rel='stylesheet' />
     <link href='assets/css/fontawesome-all.min.css' rel='stylesheet' />
     <link href='assets/css/bootstrap-datetimepicker.min.css' rel='stylesheet' />
@@ -183,9 +183,15 @@
                                             l.layout["text-allow-overlap"] = false;
                                             l.layout["icon-allow-overlap"] = false;
                                         }
+
                                         l.layout["visibility"] = "visible";
                                         // Add paint style from paint location style
                                         l.paint = l["paint.{location}"];
+                                    }
+
+                                    //condition ajouté pour v0.45
+                                    if (l["source-layer"] == "OGRGeoJSON") {
+                                        delete l["source-layer"];
                                     }
                                 }
                                 mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
@@ -207,7 +213,7 @@
                                     var features = map.queryRenderedFeatures(e.point, { layers: layerIds });
                                     if (!features.length) return;
                                     var feature = features[0];
-                                    console.log(feature);
+
                                     new mapboxgl.Popup()
                                         .setLngLat(feature.geometry.coordinates)
                                         .setHTML(feature.properties.description)
@@ -397,7 +403,7 @@
                             markers.features[k].properties.color = markers.color;
                             markersToDisplay.features.push(markers.features[k]);
 
-                            console.log("SET DATA");
+
                             map.getSource("markers").setData(markersToDisplay);
 
                             function myLoop() {
@@ -444,7 +450,7 @@
 
             loadJSON(url, function (err, _markers) {
 
-                console.log(_markers);
+
 
                 if (_markers) {
 
@@ -475,7 +481,7 @@
                         //f.properties.appuserid = markers.subjectId;
                     }
 
-                    console.log(markers);
+
 
                     // Add layers in layers list
                     var found = false;
@@ -524,8 +530,7 @@
                             }
                         });
                     }
-                    console.log("map.getSource");
-                    console.log(map.getSource("markers"));
+
                     updateMarkersOnMap();
                     applyFilters(currentbuilding, currentfloor);
 
@@ -535,13 +540,202 @@
 
         }
 
+        function drawTrajectoireProgressif(geojson) {
+            // Flatten building and floor
+            // markers = geojson;
+
+
+
+            var allFeatures = geojson.features;
+
+            //for (var i = 0; i < geojson.features.length; i++) {
+            //    var myCoordinate = geojson.features[i].geometry.coordinates;
+            //    allCoordinates.push(myCoordinate);
+            //}
+
+
+
+
+
+
+            for (var i = 0; i < allFeatures.length; i++) {
+                var f = allFeatures[i];
+                var v1 = f.geometry.coordinates[0];
+                var v2 = f.geometry.coordinates[1];
+                f.geometry.coordinates[0] = v2;
+                f.geometry.coordinates[1] = v1;
+                //f.geometry = {};
+                //f.geometry.type = "Point";
+                //f.geometry.coordinates = [f.lat, f.lon];
+
+                //f.properties = {};
+                //f.properties.location = {};
+                f.properties.locationbuilding = "" + f.properties.building;
+                f.properties.locationfloor = "" + f.properties.floor;
+                //f.properties.appuserid = markers.subjectId;
+            }
+            geojson.features = [];
+            geojson.features.push(allFeatures[0]);
+
+
+
+            // Add layers in layers list
+            let found = false;
+            for (let i = 0; i < layerIds.length; i++) {
+                if (layerIds[i] === geojson.layerid) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found === false) layerIds.push(geojson.layerid);
+
+            if (!map.getSource("trajectoire")) {
+                map.addSource("trajectoire", {
+                    "type": "geojson",
+                    "maxzoom": 22,
+                    "data": geojson
+                });
+            } else {
+
+                map.getSource("trajectoire").setData(geojson);
+            }
+
+
+
+            map.addLayer({
+                "id": geojson.layerid,
+                "type": "circle",
+                "source": "trajectoire",
+                "filter": ["all",
+                    [
+                        "==",
+                        "locationbuilding",
+                        "{building}"
+                    ],
+                    [
+                        "==",
+                        "locationfloor",
+                        "{floor}"
+                    ]
+                ],
+                "paint": {
+                    "circle-radius": 4,
+                    "circle-color": geojson.color,
+                    "circle-opacity": {
+                        "property": "opacity",
+                        "type": "identity"
+                    }
+                }
+            });
+
+
+
+            var i = 0;
+            var timer = window.setInterval(function () {
+                if (i < allFeatures.length) {
+                    geojson.features.push(allFeatures[i]);
+                    map.getSource('trajectoire').setData(geojson);
+
+                    i++;
+                } else {
+                    window.clearInterval(timer);
+                }
+            }, 300);
+
+            // updateMarkersOnMap();
+            applyFilters(currentbuilding, currentfloor);
+
+
+        }
+
         function drawTrajectoire(geojson) {
 
 
-            // =========================== LINE ====================================
-            console.log("GEOJSON INITIAL");
-            console.log(geojson);
 
+            for (var i = 0; i < geojson.features.length; i++) {
+                var f = geojson.features[i];
+                var v1 = f.geometry.coordinates[0];
+                var v2 = f.geometry.coordinates[1];
+                f.geometry.coordinates[0] = v2;
+                f.geometry.coordinates[1] = v1;
+
+                f.properties.locationbuilding = "" + f.properties.building;
+                f.properties.locationfloor = "" + f.properties.floor;
+                //f.properties.appuserid = markers.subjectId;
+            }
+
+
+
+            // Add layers in layers list
+            let found = false;
+            for (let i = 0; i < layerIds.length; i++) {
+                if (layerIds[i] === geojson.layerid) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found === false) layerIds.push(geojson.layerid);
+
+            if (!map.getSource("trajectoire")) {
+                map.addSource("trajectoire", {
+                    "type": "geojson",
+                    "maxzoom": 22,
+                    "data": geojson
+                });
+            } else {
+
+                map.getSource("trajectoire").setData(geojson);
+            }
+
+
+
+            map.addLayer({
+                "id": geojson.layerid,
+                "type": "circle",
+                "source": "trajectoire",
+                "filter": ["all",
+                    [
+                        "==",
+                        "locationbuilding",
+                        "{building}"
+                    ],
+                    [
+                        "==",
+                        "locationfloor",
+                        "{floor}"
+                    ]
+                ],
+                "paint": {
+                    "circle-radius": 4,
+                    "circle-color": geojson.color,
+                    "circle-opacity": {
+                        "property": "opacity",
+                        "type": "identity"
+                    }
+                }
+            });
+
+
+
+            applyFilters(currentbuilding, currentfloor);
+
+        }
+
+
+        function drawLineTrajectoireProgressif(geojson) {
+
+
+            for (var i = 0; i < geojson.features.length; i++) {
+                var f = geojson.features[i];
+                var v1 = f.geometry.coordinates[0];
+                var v2 = f.geometry.coordinates[1];
+                f.geometry.coordinates[0] = v2;
+                f.geometry.coordinates[1] = v1;
+
+                f.properties.locationbuilding = "" + f.properties.building;
+                f.properties.locationfloor = "" + f.properties.floor;
+
+            }
 
             var allCoordinates = [];
 
@@ -550,8 +744,7 @@
                 allCoordinates.push(myCoordinate);
             }
 
-            console.log("allCoordinates");
-            console.log(allCoordinates);
+
 
             let geojsonLine = {};
             geojsonLine.type = "FeatureCollection";
@@ -578,33 +771,13 @@
 
             geojsonLine.features.push(myFeature);
 
-            console.log("geojsonLine");
-            console.log(geojsonLine);
-
-            // A changer pour line
-            //for (var i = 0; i < geojsonLine.features.length; i++) {
-            //    var f = geojsonLine.features[i];
-            //    var v1 = f.geometry.coordinates[0];
-            //    var v2 = f.geometry.coordinates[1];
-            //    f.geometry.coordinates[0] = v2;
-            //    f.geometry.coordinates[1] = v1;
-            //    //f.geometry = {};
-            //    //f.geometry.type = "Point";
-            //    //f.geometry.coordinates = [f.lat, f.lon];
-
-            //    //f.properties = {};
-            //    //f.properties.location = {};
-            //    f.properties.locationbuilding = "" + f.properties.building;
-            //    f.properties.locationfloor = "" + f.properties.floor;
-            //    //f.properties.appuserid = markers.subjectId;
-            //}
 
             //Pour l'affichage progressif (Recupere 1 seule coordonnées)
 
-            //geojsonLine.features[0].geometry.coordinates = [];
-            //geojsonLine.features[0].geometry.coordinates.push(allCoordinates[0]);
+            geojsonLine.features[0].geometry.coordinates = [];
+            geojsonLine.features[0].geometry.coordinates.push(allCoordinates[0]);
 
-            console.log(JSON.stringify(geojsonLine));
+
 
             // Add layers in layers list
             let found = false;
@@ -619,255 +792,34 @@
             if (!map.getSource("trajectoire")) {
                 map.addSource("trajectoire", {
                     "type": "geojson",
+                    "lineMetrics": true,
                     "maxzoom": 22,
                     "data": geojsonLine
                 });
             } else {
-                console.log("Source OK => set data");
+
                 map.getSource("trajectoire").setData(geojsonLine);
             }
 
-            console.log("After get source");
+
+            //let color = geojson.color.substr(1, geojson.color.length - 1);
+
+
+            function hexToRgbA(hex, alpha) {
+                var c;
+                if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+                    c = hex.substring(1).split('');
+                    if (c.length == 3) {
+                        c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+                    }
+                    c = '0x' + c.join('');
+                    return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + alpha + ')';
+                }
+                throw new Error('Bad Hex');
+            }
 
             map.addLayer({
                 "id": geojsonLine.layerid,
-                "type": "line",
-                "source": "trajectoire",
-                "filter": ["all",
-                    [
-                        "==",
-                        "locationbuilding",
-                        geojsonLine.features[0].properties.building
-                    ],
-                    [
-                        "==",
-                        "locationfloor",
-                        geojsonLine.features[0].properties.floor
-                    ]
-                ],
-                "paint": {
-                    "line-width": 5,
-                    "line-color": geojsonLine.color,
-                    "line-opacity": 0.75
-                    //"line-opacity": {
-                    //    "property": "opacity",
-                    //    "type": "identity"
-                    //}
-                }
-            });
-
-            console.log("After add layer");
-
-            //var i = 0;
-            //var timer = window.setInterval(function () {
-            //    if (i < allCoordinates.length) {
-            //        geojsonLine.features[0].geometry.coordinates.push(allCoordinates[i]);
-            //        map.getSource('trajectoire').setData(geojsonLine);
-            //        console.log("setData n° : " + i);
-            //        console.log(allCoordinates[i]);
-            //        i++;
-            //    } else {
-            //        window.clearInterval(timer);
-            //    }
-            //}, 300);
-
-            // updateMarkersOnMap();
-            applyFilters(currentbuilding, currentfloor);
-
-            // ========================== END LINE ====================================
-
-
-
-            //// Flatten building and floor
-            //// markers = geojson;
-
-            //console.log(geojson);
-
-            //var allFeatures = geojson.features;
-
-            ////for (var i = 0; i < geojson.features.length; i++) {
-            ////    var myCoordinate = geojson.features[i].geometry.coordinates;
-            ////    allCoordinates.push(myCoordinate);
-            ////}
-
-
-
-            //console.log("ALL COORDINATES TAB");
-            //console.log(allFeatures);
-            //console.log("GEOJSON WITH ONLY 1 FEATURES");
-            //console.log(geojson);
-
-
-            //for (var i = 0; i < allFeatures.length; i++) {
-            //    var f = allFeatures[i];
-            //    var v1 = f.geometry.coordinates[0];
-            //    var v2 = f.geometry.coordinates[1];
-            //    f.geometry.coordinates[0] = v2;
-            //    f.geometry.coordinates[1] = v1;
-            //    //f.geometry = {};
-            //    //f.geometry.type = "Point";
-            //    //f.geometry.coordinates = [f.lat, f.lon];
-
-            //    //f.properties = {};
-            //    //f.properties.location = {};
-            //    f.properties.locationbuilding = ""+f.properties.building;
-            //    f.properties.locationfloor = ""+f.properties.floor;
-            //    //f.properties.appuserid = markers.subjectId;
-            //}
-            //geojson.features = [];
-            //geojson.features.push(allFeatures[0]);
-
-            //console.log(JSON.stringify(geojson));
-
-            //// Add layers in layers list
-            //let found = false;
-            //for (let i = 0; i < layerIds.length; i++) {
-            //    if (layerIds[i] === geojson.layerid) {
-            //        found = true;
-            //        break;
-            //    }
-            //}
-            //if (found === false) layerIds.push(geojson.layerid);
-
-            //if (!map.getSource("trajectoire")) {
-            //    map.addSource("trajectoire", {
-            //        "type": "geojson",
-            //        "maxzoom": 22,
-            //        "data": geojson
-            //    });
-            //} else {
-            //    console.log("Source OK => set data");
-            //    map.getSource("trajectoire").setData(geojson);
-            //}
-
-            //console.log("After get source");
-
-            //map.addLayer({
-            //    "id": geojson.layerid,
-            //    "type": "circle",
-            //    "source": "trajectoire",
-            //    "filter": ["all",
-            //        [
-            //            "==",
-            //            "locationbuilding",
-            //            "{building}"
-            //        ],
-            //        [
-            //            "==",
-            //            "locationfloor",
-            //            "{floor}"
-            //        ]
-            //    ],
-            //    "paint": {
-            //        "circle-radius": 4,
-            //        "circle-color": geojson.color,
-            //        "circle-opacity": {
-            //            "property": "opacity",
-            //            "type": "identity"
-            //        }
-            //    }
-            //});
-
-            //console.log("After add layer");
-
-            //var i = 0;
-            //var timer = window.setInterval(function () {
-            //    if (i < allFeatures.length) {
-            //        geojson.features.push(allFeatures[i]);
-            //        map.getSource('trajectoire').setData(geojson);
-            //        console.log("setData n° : " + i);
-            //        i++;
-            //    } else {
-            //        window.clearInterval(timer);
-            //    }
-            //}, 300);
-
-            //// updateMarkersOnMap();
-            //applyFilters(currentbuilding, currentfloor);
-        }
-
-
-        function drawLineTrajectoire(geojson) {
-
-
-            var allCoordinates = [];
-
-            for (var i = 0; i < geojson.features.length; i++) {
-                var myCoordinate = geojson.features[i].geometry.coordinates;
-                allCoordinates.push(myCoordinate);
-            }
-
-            console.log("allCoordinates");
-            console.log(allCoordinates);
-
-
-
-            let geojsonLine = {};
-            geojsonLine.type = "FeatureCollection";
-            geojsonLine.features[0].type = "Feature";
-            geojsonLine.features[0].geometry.type = "Linestring";
-            geojsonLine.features[0].geometry.coordinates = allCoordinates;
-
-            console.log("geojsonLine");
-            console.log(geojsonLine);
-
-            var allFeatures = geojson.features;
-
-
-
-
-
-            console.log("ALL COORDINATES TAB");
-            console.log(allFeatures);
-            console.log("GEOJSON WITH ONLY 1 FEATURES");
-            console.log(geojson);
-
-            for (var i = 0; i < allFeatures.length; i++) {
-                var f = allFeatures[i];
-                var v1 = f.geometry.coordinates[0];
-                var v2 = f.geometry.coordinates[1];
-                f.geometry.coordinates[0] = v2;
-                f.geometry.coordinates[1] = v1;
-                //f.geometry = {};
-                //f.geometry.type = "Point";
-                //f.geometry.coordinates = [f.lat, f.lon];
-
-                //f.properties = {};
-                //f.properties.location = {};
-                f.properties.locationbuilding = "" + f.properties.building;
-                f.properties.locationfloor = "" + f.properties.floor;
-                //f.properties.appuserid = markers.subjectId;
-            }
-            geojson.features = [];
-            geojson.features.push(allFeatures[0]);
-
-            console.log(JSON.stringify(geojson));
-
-            // Add layers in layers list
-            let found = false;
-            for (let i = 0; i < layerIds.length; i++) {
-                if (layerIds[i] === geojson.layerid) {
-                    found = true;
-                    break;
-                }
-            }
-            if (found === false) layerIds.push(geojson.layerid);
-
-            if (!map.getSource("trajectoire")) {
-                map.addSource("trajectoire", {
-                    "type": "geojson",
-                    "maxzoom": 22,
-                    "data": geojson
-                });
-            } else {
-                console.log("Source OK => set data");
-                map.getSource("trajectoire").setData(geojson);
-            }
-
-            console.log("After get source");
-
-            map.addLayer({
-                "id": geojson.layerid,
                 "type": "line",
                 "source": "trajectoire",
                 "filter": ["all",
@@ -883,29 +835,170 @@
                     ]
                 ],
                 "paint": {
+                    'line-gradient': [
+                        'interpolate',
+                        ['linear'],
+                        ['line-progress'],
+                        0, hexToRgbA(geojsonLine.color, 0),
+                        0.1, hexToRgbA(geojson.color, 0.1),
+                        0.2, hexToRgbA(geojson.color, 0.2),
+                        0.3, hexToRgbA(geojson.color, 0.3),
+                        0.4, hexToRgbA(geojson.color, 0.4),
+                        0.5, hexToRgbA(geojson.color, 0.5),
+                        0.6, hexToRgbA(geojson.color, 0.6),
+                        0.7, hexToRgbA(geojson.color, 0.7),
+                        0.8, hexToRgbA(geojson.color, 0.8),
+                        0.9, hexToRgbA(geojson.color, 0.9),
+                        1, hexToRgbA(geojson.color, 1)
+                    ],
                     "line-width": 5,
-                    "line-color": geojson.color,
-                    "line-opacity": 0.75
-                    //"line-opacity": {
-                    //    "property": "opacity",
-                    //    "type": "identity"
-                    //}
-                }
+                },
+                'layout': {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                },
             });
 
-            console.log("After add layer");
+
 
             var i = 0;
             var timer = window.setInterval(function () {
-                if (i < allFeatures.length) {
-                    geojson.features.push(allFeatures[i]);
-                    map.getSource('trajectoire').setData(geojson);
-                    console.log("setData n° : " + i);
+                if (i < allCoordinates.length) {
+                    geojsonLine.features[0].geometry.coordinates.push(allCoordinates[i]);
+                    map.getSource('trajectoire').setData(geojsonLine);
                     i++;
                 } else {
                     window.clearInterval(timer);
                 }
             }, 300);
+
+            // updateMarkersOnMap();
+            applyFilters(currentbuilding, currentfloor);
+        }
+
+        function drawLineTrajectoire(geojson) {
+
+            for (var i = 0; i < geojson.features.length; i++) {
+                var f = geojson.features[i];
+                var v1 = f.geometry.coordinates[0];
+                var v2 = f.geometry.coordinates[1];
+                f.geometry.coordinates[0] = v2;
+                f.geometry.coordinates[1] = v1;
+
+                f.properties.locationbuilding = "" + f.properties.building;
+                f.properties.locationfloor = "" + f.properties.floor;
+
+            }
+
+            var allCoordinates = [];
+
+            for (var i = 0; i < geojson.features.length; i++) {
+                var myCoordinate = geojson.features[i].geometry.coordinates;
+                allCoordinates.push(myCoordinate);
+            }
+
+
+            let geojsonLine = {};
+            geojsonLine.type = "FeatureCollection";
+            geojsonLine.features = [];
+            geojsonLine.layerid = geojson.layerid;
+            geojsonLine.subjectId = geojson.subjectId;
+            geojsonLine.color = geojson.color;
+
+            let myFeature = {};
+            myFeature.type = "Feature";
+
+            // A voir
+            myFeature.properties = {};
+            myFeature.properties.location = {};
+            // --------
+            myFeature.geometry = {};
+            myFeature.geometry.type = "LineString";
+            myFeature.geometry.coordinates = allCoordinates;
+
+            // A voir (Pour le moment : valeurs en dur)
+
+            myFeature.properties = geojson.features[0].properties;
+
+
+            geojsonLine.features.push(myFeature);
+
+            // Add layers in layers list
+            let found = false;
+            for (let i = 0; i < layerIds.length; i++) {
+                if (layerIds[i] === geojsonLine.layerid) {
+                    found = true;
+                    break;
+                }
+            }
+            if (found === false) layerIds.push(geojsonLine.layerid);
+
+            if (!map.getSource("trajectoire")) {
+                map.addSource("trajectoire", {
+                    "type": "geojson",
+                    "lineMetrics": true,
+                    "maxzoom": 22,
+                    "data": geojsonLine
+                });
+            } else {
+                map.getSource("trajectoire").setData(geojsonLine);
+            }
+
+
+
+            function hexToRgbA(hex, alpha) {
+                var c;
+                if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+                    c = hex.substring(1).split('');
+                    if (c.length == 3) {
+                        c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+                    }
+                    c = '0x' + c.join('');
+                    return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + alpha + ')';
+                }
+                throw new Error('Bad Hex');
+            }
+
+            map.addLayer({
+                "id": geojsonLine.layerid,
+                "type": "line",
+                "source": "trajectoire",
+                "filter": ["all",
+                    [
+                        "==",
+                        "locationbuilding",
+                        "{building}"
+                    ],
+                    [
+                        "==",
+                        "locationfloor",
+                        "{floor}"
+                    ]
+                ],
+                "paint": {
+                    'line-gradient': [
+                        'interpolate',
+                        ['linear'],
+                        ['line-progress'],
+                        0, hexToRgbA(geojsonLine.color, 0),
+                        0.1, hexToRgbA(geojson.color, 0.1),
+                        0.2, hexToRgbA(geojson.color, 0.2),
+                        0.3, hexToRgbA(geojson.color, 0.3),
+                        0.4, hexToRgbA(geojson.color, 0.4),
+                        0.5, hexToRgbA(geojson.color, 0.5),
+                        0.6, hexToRgbA(geojson.color, 0.6),
+                        0.7, hexToRgbA(geojson.color, 0.7),
+                        0.8, hexToRgbA(geojson.color, 0.8),
+                        0.9, hexToRgbA(geojson.color, 0.9),
+                        1, hexToRgbA(geojson.color, 1)
+                    ],
+                    "line-width": 5,
+                },
+                'layout': {
+                    'line-cap': 'round',
+                    'line-join': 'round'
+                },
+            });
 
             // updateMarkersOnMap();
             applyFilters(currentbuilding, currentfloor);
@@ -923,74 +1016,74 @@
             }
         }
 
-            //function loadMarkers(url) {
-            //    loadJSON(url, function (err, _markers) {
+                                                //function loadMarkers(url) {
+                                                //    loadJSON(url, function (err, _markers) {
 
-            //        console.log(_markers);
+                                                //        console.log(_markers);
 
-            //        if (_markers) {
-            //            resetPlay();
-            //            markers = _markers;
-            //            // Flatten building and floor
-            //            for (var i = 0; i < markers.features.length; i++) {
-            //                var f = markers.features[i];
+                                                //        if (_markers) {
+                                                //            resetPlay();
+                                                //            markers = _markers;
+                                                //            // Flatten building and floor
+                                                //            for (var i = 0; i < markers.features.length; i++) {
+                                                //                var f = markers.features[i];
 
-            //                f.properties.locationbuilding = f.properties.location.building;
-            //                f.properties.locationfloor = f.properties.location.floor;
-            //            }
+                                                //                f.properties.locationbuilding = f.properties.location.building;
+                                                //                f.properties.locationfloor = f.properties.location.floor;
+                                                //            }
 
-            //            // Add layers in layers list
-            //            var found = false;
-            //            for (var i = 0; i < layerIds.length; i++) {
-            //                if (layerIds[i] == "circles") {
-            //                    found = true;
-            //                    break;
-            //                }
-            //            }
-            //            if (found == false) layerIds.push("circles");
+                                                //            // Add layers in layers list
+                                                //            var found = false;
+                                                //            for (var i = 0; i < layerIds.length; i++) {
+                                                //                if (layerIds[i] == "circles") {
+                                                //                    found = true;
+                                                //                    break;
+                                                //                }
+                                                //            }
+                                                //            if (found == false) layerIds.push("circles");
 
-            //            if (!map.getSource("markers")) {
-            //                console.log(markers);
-            //                map.addSource("markers", {
-            //                    "type": "geojson",
-            //                    "maxzoom": 22,
-            //                    "data": markers
-            //                });
+                                                //            if (!map.getSource("markers")) {
+                                                //                console.log(markers);
+                                                //                map.addSource("markers", {
+                                                //                    "type": "geojson",
+                                                //                    "maxzoom": 22,
+                                                //                    "data": markers
+                                                //                });
 
-            //                map.addLayer({
-            //                    "id": "circles",
-            //                    "type": "circle",
-            //                    "source": "markers",
-            //                    "filter": ["all",
-            //                        [
-            //                            "==",
-            //                            "locationbuilding",
-            //                            "{building}"
-            //                        ],
-            //                        [
-            //                            "==",
-            //                            "locationfloor",
-            //                            "{floor}"
-            //                        ]
-            //                    ],
-            //                    "paint": {
-            //                        "circle-radius": 3,
-            //                        "circle-color": {
-            //                            "property": "color",
-            //                            "type": "identity"
-            //                        },
-            //                        "circle-opacity": {
-            //                            "property": "opacity",
-            //                            "type": "identity"
-            //                        }
-            //                    }
-            //                });
-            //            }
-            //            updateMarkersOnMap();
-            //            applyFilters(currentbuilding, currentfloor);
-            //        }
-            //    });
-            //}
+                                                //                map.addLayer({
+                                                //                    "id": "circles",
+                                                //                    "type": "circle",
+                                                //                    "source": "markers",
+                                                //                    "filter": ["all",
+                                                //                        [
+                                                //                            "==",
+                                                //                            "locationbuilding",
+                                                //                            "{building}"
+                                                //                        ],
+                                                //                        [
+                                                //                            "==",
+                                                //                            "locationfloor",
+                                                //                            "{floor}"
+                                                //                        ]
+                                                //                    ],
+                                                //                    "paint": {
+                                                //                        "circle-radius": 3,
+                                                //                        "circle-color": {
+                                                //                            "property": "color",
+                                                //                            "type": "identity"
+                                                //                        },
+                                                //                        "circle-opacity": {
+                                                //                            "property": "opacity",
+                                                //                            "type": "identity"
+                                                //                        }
+                                                //                    }
+                                                //                });
+                                                //            }
+                                                //            updateMarkersOnMap();
+                                                //            applyFilters(currentbuilding, currentfloor);
+                                                //        }
+                                                //    });
+                                                //}
     </script>
     <script type="application/javascript" src="assets/js/sidebar.js"></script>
 </body>
