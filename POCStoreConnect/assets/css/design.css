@@ -51,4 +51,38 @@ html, body, .container-fluid {
 
 .loader-capteur, .loader-service {
     display: none;
+    border: 5px solid #f3f3f3;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    border-top: 5px solid #555;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    margin:0 auto;
+}
+
+.loader-map {
+    display: inline-block;
+    border: 5px solid #f3f3f3;
+    -webkit-animation: spin 1s linear infinite;
+    animation: spin 1s linear infinite;
+    border-top: 5px solid #555;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+}
+
+.loader-map-wrapper {
+    position: absolute;
+    z-index: 999;
+    background: rgba(0,0,0,0.25);
+    height: 600px;
+    display: none;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }

@@ -71,13 +71,17 @@
             <div id="menu">
                 <div id="apicapteur">
                     <span class="navbar-brand">API CAPTEUR</span>
-                    <img src="assets/loader.gif" class="col-12 loader-capteur"/>
+                    <div class="col-12">
+                        <div class="loader-capteur"></div>
+                    </div>
                     <div id="apicapteurmenu">
                     </div>
                 </div>
                 <div id="apiservice">
                     <span class="navbar-brand">API SERVICE</span>
-                    <img src="assets/loader.gif" class="col-12 loader-service"/>
+                    <div class="col-12">
+                        <div class="loader-service"></div>
+                    </div>
                     <div id="apiservicemenu">
                     </div>
                 </div>
@@ -94,8 +98,20 @@
             <!--<input type="button" id="playbtn" value="Start" style="display:none" onclick="onPlayButtonClick()"/>-->
             <div align="center" id="buttons">
             </div>
+            <div class="col-4">
+                <button role="button" class="btn btn-sm btn-outline-primary showCircles active">
+                    Show circles
+                    <i class="fas fa-circle"></i>
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-primary showLines">
+                    Show lines
+                    <i class="fas fa-chart-line"></i>
+                </button>
+            </div>
             <div id='map'>
-
+                <div class="col-12 loader-map-wrapper">
+                    <div class="loader-map"></div>
+                </div>
             </div>
         </div>
 
@@ -133,7 +149,56 @@
     document.querySelector('#venueid').value = 95;
     onLoadButtonClick();
 
+    let layerMode = 0; //circle by default
+
+    document.querySelector(".showCircles").addEventListener("click", function () {
+        //add "active" class to button, or remove it if it already has.
+        this.classList.toggle("active");
+        if (this.classList.contains("active")) {
+            //If button showCircle has class active, set layerMode to circles.
+            layerMode = 0;
+            //And so remove "active" class from showLine button
+            document.querySelector(".showLines").classList.toggle("active");
+            //Then iterate through layers
+            for (let id of layerIds) {
+                //Show only layer that contains our geojson data in circles,
+                if (id.includes("geojson-data") && !id.includes("-line")) {
+                    showLayer(id);
+                } else if (id.includes("geojson-data")) {
+                    //And exclude thoose with geojson data in lines.
+                    hideLayer(id);
+                }
+            }
+            //refresh layer view
+            applyFilters(currentbuilding, currentfloor);
+        }
+    });
+
+    document.querySelector(".showLines").addEventListener("click", function () {
+        //add "active" class to button, or remove it if it already has.
+        this.classList.toggle("active");
+        if (this.classList.contains("active")) {
+            //If button showLines has class active, set layerMode to lines.
+            layerMode = 1;
+            //And so remove "active" class from showCircle button
+            document.querySelector(".showCircles").classList.toggle("active");
+            //Then iterate through layers
+            for (let id of layerIds) {
+                //Show only layer that contains our geojson data in lines,
+                if (id.includes("-line")) {
+                    showLayer(id);
+                } else if (id.includes("geojson-data")) {
+                    //And exclude thoose with geojson data in circles.
+                    hideLayer(id);
+                }
+            }
+            applyFilters(currentbuilding, currentfloor);
+        }
+    });
+
+
     function onLoadButtonClick() {
+        showMapLoader();
         apikey = document.getElementById('apikey').value;
         venueid = document.getElementById('venueid').value;
         // Load geolys venue
@@ -223,6 +288,8 @@
                                                                 map.getCanvas().style.cursor = (!err && features.length) ? 'pointer' : '';
                                 */
                             });
+
+                            hideMapLoader();
                         });
                     }
                 });
@@ -539,39 +606,15 @@
     }
 
     function drawTrajectoire(geojson) {
-        // Flatten building and floor
-        // markers = geojson;
+        //show loader
+        showMapLoader();
 
-        var allFeatures = geojson.features;
+        /******************************************
+         * Build a layer for circles with geojson
+         *****************************************/
 
-        //for (var i = 0; i < geojson.features.length; i++) {
-        //    var myCoordinate = geojson.features[i].geometry.coordinates;
-        //    allCoordinates.push(myCoordinate);
-        //}
-
-
-        for (var i = 0; i < allFeatures.length; i++) {
-            var f = allFeatures[i];
-            var v1 = f.geometry.coordinates[0];
-            var v2 = f.geometry.coordinates[1];
-            f.geometry.coordinates[0] = v2;
-            f.geometry.coordinates[1] = v1;
-            //f.geometry = {};
-            //f.geometry.type = "Point";
-            //f.geometry.coordinates = [f.lat, f.lon];
-
-            //f.properties = {};
-            //f.properties.location = {};
-            f.properties.locationbuilding = "" + f.properties.building;
-            f.properties.locationfloor = "" + f.properties.floor;
-            //f.properties.appuserid = markers.subjectId;
-        }
-        // geojson.features = [];
-        // geojson.features.push(allFeatures[0]);
-
-
-
-        // Add layers in layers list
+        //First we add layer's id to array,
+        //if we don't already have it
         let found = false;
         for (let i = 0; i < layerIds.length; i++) {
             if (layerIds[i] === geojson.layerid) {
@@ -583,26 +626,25 @@
 
         if (map.getLayer(geojson.layerid)) {
             //Layer already exists, just show it
-            console.log("Layer " + geojson.layerid + " already exists, showing it");
             map.setLayoutProperty(geojson.layerid, "visibility", "visible");
         } else {
             //Layer does'nt exists yet, create it
-            if (!map.getSource("trajectoire")) {
-                console.log("Creating source trajectoire");
-                map.addSource("trajectoire", {
+            //But first test if we have the source,if not : create it
+            if (!map.getSource("trajectoire-" + geojson.layerid)) {
+                map.addSource("trajectoire-" + geojson.layerid, {
                     "type": "geojson",
                     "maxzoom": 22,
                     "data": geojson
                 });
             } else {
-                console.log("adding data from geojson to datasource");
-                map.getSource("trajectoire").setData(geojson);
+                map.getSource("trajectoire-" + geojson.layerid).setData(geojson);
             }
 
+            //And build the layer
             map.addLayer({
                 "id": geojson.layerid,
                 "type": "circle",
-                "source": "trajectoire",
+                "source": "trajectoire-" + geojson.layerid,
                 "filter": ["all",
                     [
                         "==",
@@ -624,46 +666,140 @@
                     }
                 },
                 "layout": {
-                    "visibility": "visible"
+                    //Here we make the layer visible if mode is circle
+                    "visibility": (layerMode === 0 ? "visible" : "none")
                 }
             });
         }
 
+        /******************************************
+         * Build a layer for lines with new geojson
+         *****************************************/
+        //rebuild another geojson for lines
+        let geojsonLine = {};
+        geojsonLine.type = geojson.type;
+        geojsonLine.features = [];
+        geojsonLine.features[0] = {};
+        geojsonLine.features[0].type = "Feature";
+        geojsonLine.features[0].geometry = {};
+        geojsonLine.features[0].geometry.type = "LineString";
+        geojsonLine.features[0].geometry.coordinates = [];
+        geojsonLine.features[0].properties = geojson.features[0].properties;
+        geojsonLine.layerid = geojson.layerid + "-line";
+        geojsonLine.color = geojson.color;
+        for (let f of geojson.features) {
+            geojsonLine.features[0].geometry.coordinates.push(f.geometry.coordinates);
+        }
 
-        // var i = 0;
-        // var timer = window.setInterval(function () {
-        //     if (i < allFeatures.length) {
-        //         geojson.features.push(allFeatures[i]);
-        //         map.getSource('trajectoire').setData(geojson);
-        //         console.log("setData n° : "+i);
-        //         i++;
-        //     } else {
-        //         window.clearInterval(timer);
-        //     }
-        // }, 300);
+        found = false;
+        for (let i = 0; i < layerIds.length; i++) {
+            if (layerIds[i] === geojsonLine.layerid) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) layerIds.push(geojsonLine.layerid);
+
+        if (map.getLayer(geojsonLine.layerid)) {
+            //Layer already exists, just show it
+            map.setLayoutProperty(geojsonLine.layerid, "visibility", "visible");
+        } else {
+            //Layer does'nt exists yet, create it
+            if (!map.getSource("trajectoire-" + geojsonLine.layerid)) {
+                map.addSource("trajectoire-" + geojsonLine.layerid, {
+                    "type": "geojson",
+                    "maxzoom": 22,
+                    "data": geojsonLine
+                });
+            } else {
+                map.getSource("trajectoire-" + geojsonLine.layerid).setData(geojsonLine);
+            }
+
+            map.addLayer({
+                "id": geojsonLine.layerid,
+                "type": "line",
+                "source": "trajectoire-" + geojsonLine.layerid,
+                "filter": ["all",
+                    [
+                        "==",
+                        "locationbuilding",
+                        "{building}"
+                    ],
+                    [
+                        "==",
+                        "locationfloor",
+                        "{floor}"
+                    ]
+                ],
+                "paint": {
+                    'line-color': geojsonLine.color,
+                    'line-width': 5,
+                },
+                "layout": {
+                    'line-cap': 'round',
+                    'line-join': 'round',
+                    "visibility": (layerMode === 1 ? "visible" : "none")
+                }
+            });
+        }
 
         // updateMarkersOnMap();
         applyFilters(currentbuilding, currentfloor);
+
+        hideMapLoader();
     }
 
+    /**
+     * Function to hide geojson data layer.
+     */
     function hideLayer(id) {
         if (map.getLayer(id)) {
-            // map.removeLayer(id);
-            // for (let i = 0; i < layerIds.length; i++) {
-            //     if (layerIds[i] === id) {
-            //         layerIds.splice(i, 1);
-            //         break;
-            //     }
-            // }
             if (map.getLayoutProperty(id, "visibility") === "visible") {
-                console.log("hiding layer " + id);
                 map.setLayoutProperty(id, "visibility", "none");
-            } else {
-                console.log("Error hiding layer " + id);
             }
         }
     }
 
+    /**
+     * Function to show geojson data layer.
+     */
+    function showLayer(id) {
+        if (map.getLayer(id)) {
+            if (map.getLayoutProperty(id, "visibility") === "none") {
+                map.setLayoutProperty(id, "visibility", "visible");
+            }
+        }
+    }
+
+    /**
+     * Function to remove specific geojson data layer
+     * called by sideBar.js, when a datastream is unclicked.
+     */
+    function removeLayer(id) {
+        //We remove circle layer
+        if (map.getLayer(id)) {
+            map.removeLayer(id);
+            for (let i = 0; i < layerIds.length; i++) {
+                if (layerIds[i] === id) {
+                    layerIds.splice(i, 1);
+                    break;
+                }
+            }
+        }
+        //And then we remove corresponding line layer.
+        id = id + "-line";
+        if (map.getLayer(id)) {
+            map.removeLayer(id);
+            for (let i = 0; i < layerIds.length; i++) {
+                if (layerIds[i] === id) {
+                    layerIds.splice(i, 1);
+                    break;
+                }
+            }
+        }
+    }
+
+    /*
     //function loadMarkers(url) {
     //    loadJSON(url, function (err, _markers) {
 
@@ -732,6 +868,15 @@
     //        }
     //    });
     //}
+    */
+
+    function showMapLoader() {
+        document.querySelector(".loader-map-wrapper").style.display = "flex";
+    }
+
+    function hideMapLoader() {
+        document.querySelector(".loader-map-wrapper").style.display = "none";
+    }
 </script>
 <script type="application/javascript" src="assets/js/sidebar.js"></script>
 </body>

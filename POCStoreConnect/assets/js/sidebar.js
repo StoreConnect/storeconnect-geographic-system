@@ -162,7 +162,7 @@ function createApiCapteurMenu(items) {
             li.setAttribute("data-color", color);
             li.setAttribute("data-datastream-id", items[item][datastream][0].Datastream["@iot.id"]);
             li.setAttribute("data-subject-id", item);
-            li.setAttribute("data-layer-id", randomId());
+            li.setAttribute("data-layer-id", "geojson-data-"+randomId());
             li.style.cursor = "pointer";
 
             li.onclick = function () {
@@ -219,7 +219,7 @@ function createApiServiceMenu(items) {
 
     li.setAttribute("data-color", color);
     li.setAttribute("data-subject-id", items.features[0].properties.subject.split("/").pop());
-    li.setAttribute("data-layer-id", randomId());
+    li.setAttribute("data-layer-id", "geojson-data-"+randomId());
     li.style.cursor = "pointer";
 
     li.onclick = function () {
@@ -264,6 +264,11 @@ function apiCapteurMenuClick(el) {
                 //refilter by subject here for camera datastream
                 if (item.result.subject.id === el.getAttribute("data-subject-id")) {
                     let location = item.result.location;
+                    let v1 = location.geometry.coordinates[0];
+                    location.geometry.coordinates[0] = location.geometry.coordinates[1];
+                    location.geometry.coordinates[1] = v1;
+                    location.properties.locationbuilding = "" + location.properties.building;
+                    location.properties.locationfloor = "" + location.properties.floor;
                     data.push(location);
                 }
             }
@@ -283,7 +288,7 @@ function apiCapteurMenuClick(el) {
 
         });
     } else {
-        hideLayer(el.getAttribute("data-layer-id"));
+        removeLayer(el.getAttribute("data-layer-id"));
     }
 }
 
@@ -314,7 +319,7 @@ function apiServiceMenuClick(el) {
         // console.log(JSON.stringify(geojson));
         drawTrajectoire(geojson);
     } else {
-        hideLayer(el.getAttribute("data-layer-id"));
+        removeLayer(el.getAttribute("data-layer-id"));
     }
 }
 
