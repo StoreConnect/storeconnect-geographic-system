@@ -4,8 +4,8 @@
     <meta charset='utf-8'/>
     <title></title>
     <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no'/>
-    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.js'></script>
-    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.26.0/mapbox-gl.css' rel='stylesheet'/>
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet'/>
     <link href='assets/css/bootstrap.min.css' rel='stylesheet'/>
     <link href='assets/css/fontawesome-all.min.css' rel='stylesheet'/>
     <link href='assets/css/bootstrap-datetimepicker.min.css' rel='stylesheet'/>
@@ -154,6 +154,7 @@
     onLoadButtonClick();
 
     let layerMode = 0; //circle by default
+    let useProgressive = 0; // to draw trajectoire progressively or not. 
 
     document.querySelector(".showCircles").addEventListener("click", function () {
         //add "active" class to button, or remove it if it already has.
@@ -259,6 +260,10 @@
                                     // Add paint style from paint location style
                                     l.paint = l["paint.{location}"];
                                 }
+                                //condition ajouté pour v0.45
+                                if (l["source-layer"] == "OGRGeoJSON") {
+                                    delete l["source-layer"];
+                                }
                             }
                             mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
                             // Add map
@@ -353,13 +358,13 @@
         currentfloor = f;
         applyFilters(currentbuilding, currentfloor);
         // If outdoor, apply no classes
-        if (b == "") {
-            map.setClasses([]);
-        }
-        else {
-            // If indoor, apply indoor classes (used to hide some outdoor features if needed)
-            map.setClasses(["indoor"]);
-        }
+        // if (b == "") {
+        //     map.setClasses([]);
+        // }
+        // else {
+        //     // If indoor, apply indoor classes (used to hide some outdoor features if needed)
+        //     map.setClasses(["indoor"]);
+        // }
     }
 
     function loadVenue(apikey, venueid, callback) {
@@ -591,10 +596,11 @@
                                 "property": "color",
                                 "type": "identity"
                             },
-                            "circle-opacity": {
-                                "property": "opacity",
-                                "type": "identity"
-                            }
+                            "circle-opacity": 0,
+                            // "circle-opacity": {
+                            //     "property": "opacity",
+                            //     "type": "identity"
+                            // }
                         }
                     });
                 }
@@ -613,6 +619,13 @@
         /******************************************
          * Build a layer for circles with geojson
          *****************************************/
+
+        let allFeatures;
+        if (useProgressive === 1) {
+            allFeatures = geojson.features;
+            geojson.features = [];
+            geojson.features.push(allFeatures[0]);
+        }
 
         //First we add layer's id to array,
         //if we don't already have it
@@ -662,8 +675,8 @@
                     "circle-radius": 5,
                     "circle-color": geojson.color,
                     "circle-opacity": {
-                        "property": "opacity",
-                        "type": "identity"
+                        "type": "identity",
+                        "property": "opacity"
                     }
                 },
                 "layout": {
@@ -673,10 +686,24 @@
             });
         }
 
+        if (useProgressive === 1) {
+            var i = 0;
+            var timer = window.setInterval(function () {
+                if (i < allFeatures.length) {
+                    geojson.features.push(allFeatures[i]);
+                    map.getSource('trajectoire').setData(geojson);
+
+                    i++;
+                } else {
+                    window.clearInterval(timer);
+                }
+            }, 300);
+        }
+
         /******************************************
          * Build a layer for lines with new geojson
          *****************************************/
-        //rebuild another geojson for lines
+            //rebuild another geojson for lines
         let geojsonLine = {};
         geojsonLine.type = geojson.type;
         geojsonLine.features = [];
@@ -690,6 +717,13 @@
         geojsonLine.color = geojson.color;
         for (let f of geojson.features) {
             geojsonLine.features[0].geometry.coordinates.push(f.geometry.coordinates);
+        }
+
+        let allCoordinates = [];
+        if (useProgressive === 1) {
+            for (let i = 0; i < geojsonLine.features.length; i++) {
+                allCoordinates.push(geojsonLine.features[i].geometry.coordinates);
+            }
         }
 
         found = false;
@@ -710,6 +744,7 @@
                 map.addSource("trajectoire-" + geojsonLine.layerid, {
                     "type": "geojson",
                     "maxzoom": 22,
+                    "lineMetrics": true,
                     "data": geojsonLine
                 });
             } else {
@@ -733,8 +768,23 @@
                     ]
                 ],
                 "paint": {
-                    'line-color': geojsonLine.color,
-                    'line-width': 5,
+                    'line-gradient': [
+                        'interpolate',
+                        ['linear'],
+                        ['line-progress'],
+                        0, hexToRgbA(geojsonLine.color, 0),
+                        0.1, hexToRgbA(geojsonLine.color, 0.1),
+                        0.2, hexToRgbA(geojsonLine.color, 0.2),
+                        0.3, hexToRgbA(geojsonLine.color, 0.3),
+                        0.4, hexToRgbA(geojsonLine.color, 0.4),
+                        0.5, hexToRgbA(geojsonLine.color, 0.5),
+                        0.6, hexToRgbA(geojsonLine.color, 0.6),
+                        0.7, hexToRgbA(geojsonLine.color, 0.7),
+                        0.8, hexToRgbA(geojsonLine.color, 0.8),
+                        0.9, hexToRgbA(geojsonLine.color, 0.9),
+                        1, hexToRgbA(geojsonLine.color, 1)
+                    ],
+                    "line-width": 5,
                 },
                 "layout": {
                     'line-cap': 'round',
@@ -742,6 +792,19 @@
                     "visibility": (layerMode === 1 ? "visible" : "none")
                 }
             });
+
+            if (useProgressive === 1) {
+                let i = 0;
+                let timer = window.setInterval(function () {
+                    if (i < allCoordinates.length) {
+                        geojsonLine.features[0].geometry.coordinates.push(allCoordinates[i]);
+                        map.getSource('trajectoire').setData(geojsonLine);
+                        i++;
+                    } else {
+                        window.clearInterval(timer);
+                    }
+                }, 300);
+            }
         }
 
         // updateMarkersOnMap();
@@ -875,6 +938,19 @@
 
     function hideMapLoader() {
         document.querySelector(".loader-map-wrapper").style.display = "none";
+    }
+
+    function hexToRgbA(hex, alpha) {
+        var c;
+        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+            c = hex.substring(1).split('');
+            if (c.length == 3) {
+                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+            }
+            c = '0x' + c.join('');
+            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + alpha + ')';
+        }
+        throw new Error('Bad Hex');
     }
 </script>
 <script type="application/javascript" src="assets/js/sidebar.js"></script>
