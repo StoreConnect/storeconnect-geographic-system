@@ -279,7 +279,7 @@ function apiCapteurMenuClick(el) {
             let i = 0;
             for (let point of geojson.features) {
                 let opacity = (i + 1) / numberOfPoints;
-                geojson.features[i].properties.opacity = opacity.toFixed(2);
+                geojson.features[i].properties.opacity = parseFloat(opacity.toFixed(2));
                 i++;
             }
 

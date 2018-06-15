@@ -653,7 +653,6 @@
             } else {
                 map.getSource("trajectoire-" + geojson.layerid).setData(geojson);
             }
-
             //And build the layer
             map.addLayer({
                 "id": geojson.layerid,
@@ -678,6 +677,7 @@
                         "type": "identity",
                         "property": "opacity"
                     }
+
                 },
                 "layout": {
                     //Here we make the layer visible if mode is circle
