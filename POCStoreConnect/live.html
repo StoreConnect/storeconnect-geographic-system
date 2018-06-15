@@ -542,8 +542,6 @@
         // Flatten building and floor
         // markers = geojson;
 
-        console.log(geojson);
-
         var allFeatures = geojson.features;
 
         //for (var i = 0; i < geojson.features.length; i++) {
@@ -551,11 +549,6 @@
         //    allCoordinates.push(myCoordinate);
         //}
 
-
-        console.log("ALL COORDINATES TAB");
-        console.log(allFeatures);
-        console.log("GEOJSON WITH ONLY 1 FEATURES");
-        console.log(geojson);
 
         for (var i = 0; i < allFeatures.length; i++) {
             var f = allFeatures[i];
@@ -576,7 +569,7 @@
         // geojson.features = [];
         // geojson.features.push(allFeatures[0]);
 
-        console.log(JSON.stringify(geojson));
+
 
         // Add layers in layers list
         let found = false;
@@ -586,44 +579,55 @@
                 break;
             }
         }
-        if (found === false) layerIds.push(geojson.layerid);
+        if (!found) layerIds.push(geojson.layerid);
 
-        if (!map.getSource("trajectoire")) {
-            map.addSource("trajectoire", {
-                "type": "geojson",
-                "maxzoom": 22,
-                "data": geojson
-            });
+        if (map.getLayer(geojson.layerid)) {
+            //Layer already exists, just show it
+            console.log("Layer " + geojson.layerid + " already exists, showing it");
+            map.setLayoutProperty(geojson.layerid, "visibility", "visible");
         } else {
-            map.getSource("trajectoire").setData(geojson);
-        }
-
-
-        map.addLayer({
-            "id": geojson.layerid,
-            "type": "circle",
-            "source": "trajectoire",
-            "filter": ["all",
-                [
-                    "==",
-                    "locationbuilding",
-                    "{building}"
-                ],
-                [
-                    "==",
-                    "locationfloor",
-                    "{floor}"
-                ]
-            ],
-            "paint": {
-                "circle-radius": 5,
-                "circle-color": geojson.color,
-                "circle-opacity": {
-                    "property": "opacity",
-                    "type": "identity"
-                }
+            //Layer does'nt exists yet, create it
+            if (!map.getSource("trajectoire")) {
+                console.log("Creating source trajectoire");
+                map.addSource("trajectoire", {
+                    "type": "geojson",
+                    "maxzoom": 22,
+                    "data": geojson
+                });
+            } else {
+                console.log("adding data from geojson to datasource");
+                map.getSource("trajectoire").setData(geojson);
             }
-        });
+
+            map.addLayer({
+                "id": geojson.layerid,
+                "type": "circle",
+                "source": "trajectoire",
+                "filter": ["all",
+                    [
+                        "==",
+                        "locationbuilding",
+                        "{building}"
+                    ],
+                    [
+                        "==",
+                        "locationfloor",
+                        "{floor}"
+                    ]
+                ],
+                "paint": {
+                    "circle-radius": 5,
+                    "circle-color": geojson.color,
+                    "circle-opacity": {
+                        "property": "opacity",
+                        "type": "identity"
+                    }
+                },
+                "layout": {
+                    "visibility": "visible"
+                }
+            });
+        }
 
 
         // var i = 0;
@@ -644,12 +648,18 @@
 
     function hideLayer(id) {
         if (map.getLayer(id)) {
-            map.removeLayer(id);
-            for (let i = 0; i < layerIds.length; i++) {
-                if (layerIds[i] === id) {
-                    layerIds.splice(i, 1);
-                    break;
-                }
+            // map.removeLayer(id);
+            // for (let i = 0; i < layerIds.length; i++) {
+            //     if (layerIds[i] === id) {
+            //         layerIds.splice(i, 1);
+            //         break;
+            //     }
+            // }
+            if (map.getLayoutProperty(id, "visibility") === "visible") {
+                console.log("hiding layer " + id);
+                map.setLayoutProperty(id, "visibility", "none");
+            } else {
+                console.log("Error hiding layer " + id);
             }
         }
     }
