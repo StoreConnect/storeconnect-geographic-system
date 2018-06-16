@@ -74,7 +74,10 @@
             <hr>
             <div id="menu">
                 <div id="apicapteur">
-                    <span class="navbar-brand">API CAPTEUR</span>
+                    <a class="navbar-brand" data-toggle="collapse" href="#apicapteurmenu" aria-expanded="true" aria-controls="apicapteurmenu">
+                        API CAPTEUR
+                    <i class="fas fa-caret-down"></i>
+                    </a>
                     <div class="col-12">
                         <div class="loader-capteur"></div>
                     </div>
@@ -82,7 +85,10 @@
                     </div>
                 </div>
                 <div id="apiservice">
-                    <span class="navbar-brand">API SERVICE</span>
+                    <a class="navbar-brand" data-toggle="collapse" href="#apiservicemenu" aria-expanded="true" aria-controls="apiservicemenu">
+                        API SERVICE
+                        <i class="fas fa-caret-down"></i>
+                    </a>
                     <div class="col-12">
                         <div class="loader-service"></div>
                     </div>
@@ -96,6 +102,10 @@
                 <input type="text" id="apikey" size="40" value="" placeholder="put_api_key"/>
                 <input type="text" id="venueid" size="12" value="" placeholder="put_venue_id"/>
                 <input type="button" value="Load venue" onclick="onLoadButtonClick()"/><br/>
+                <div id="timesync-wrapper" class="float-right">
+                    <i class="fas fa-clock"></i>
+                    <span id="timesync"></span>
+                </div>
             </div>
             <!--<input type="text" id="geojsonurl" size="100" value="" placeholder="geojson url"/>-->
             <!--<input type="button" id="geojsonbtn" value="Load GeoJSON Points" onclick="onLoadGeoJSONButtonClick()"/>-->
@@ -128,6 +138,7 @@
 <script type="application/javascript" src="assets/js/bootstrap.min.js"></script>
 <script type="application/javascript" src="assets/js/bootstrap-datetimepicker.min.js"></script>
 <script type="application/javascript" src="assets/js/apiservicemockup.js"></script>
+<script type="application/javascript" src="assets/js/timesync.js"></script>
 <script>
     // Change values according
     var apikey = location.search.substring(location.search.indexOf("=") + 1);

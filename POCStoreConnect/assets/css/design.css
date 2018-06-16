@@ -96,3 +96,7 @@ html, body, .container-fluid {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+
+#timesync-wrapper {
+    min-width: 200px;
+}
