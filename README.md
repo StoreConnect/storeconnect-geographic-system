@@ -22,10 +22,10 @@ git clone https://github.com/StoreConnect/dashboard-demo
 
 run a local web server to open live.html file
 
-
 ## Online demo :
 
 A running demo is available here : [Online Demo](https://pocstoreconnect.azurewebsites.net/live.html)
+
 
 
 
