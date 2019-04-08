@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "venueindexer": {
+      "commandName": "Project",
+      "commandLineArgs": "/source=c:\\Users\\FranckTruillot\\Downloads\\venue_91.json /eshost=http://localhost:9200/venue_91"
+    }
+  }
+}

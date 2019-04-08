@@ -13,8 +13,8 @@
     <ProjectTypeGuids>{349c5851-65df-11da-9384-00065b846f21};{fae04ec0-301f-11d3-bf4b-00c04f79efbc}</ProjectTypeGuids>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>POCStoreConnect</RootNamespace>
-    <AssemblyName>POCStoreConnect</AssemblyName>
+    <RootNamespace>dashboard</RootNamespace>
+    <AssemblyName>dashboard</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <UseIISExpress>true</UseIISExpress>
     <IISExpressSSLPort />
@@ -81,8 +81,8 @@
     <Content Include="proxy.aspx" />
     <Content Include="sprites\mapbox-streets%402x.json" />
     <Content Include="sprites\mapbox-streets.json" />
-    <None Include="Properties\PublishProfiles\pocstoreconnect - FTP.pubxml" />
-    <None Include="Properties\PublishProfiles\pocstoreconnect - Web Deploy.pubxml" />
+    <None Include="Properties\PublishProfiles\dashboard - FTP.pubxml" />
+    <None Include="Properties\PublishProfiles\dashboard - Web Deploy.pubxml" />
     <None Include="Web.Debug.config">
       <DependentUpon>Web.config</DependentUpon>
     </None>
