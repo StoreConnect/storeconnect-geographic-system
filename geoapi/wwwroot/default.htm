@@ -1,0 +1,320 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8' />
+    <title></title>
+    <meta name='viewport' content='initial-scale=1,maximum-scale=1,user-scalable=no' />
+    <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.js'></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.45.0/mapbox-gl.css' rel='stylesheet' />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        #buttons {
+            position:absolute;
+            left: 20px;
+            top: 10px;
+            right: 30%;
+            z-index: 1;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.5);
+        }
+        #map {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            left: 0;
+            right: 0;
+        }
+        #panel {
+            position: absolute;
+            font-size: 10px;
+            background-color: white;
+            overflow: scroll;
+            top: 30px;
+            bottom: 30px;
+            width: 25%;
+            right: 0;
+        }
+    </style>
+</head>
+<body>
+ 
+<script>
+
+    var baseurl = window.location.protocol + "//" + window.location.host;
+    var map = null;
+    var layerIds = [];
+    var venueid = 0;
+    var MAPBOX_ACCESS_TOKEN = 'pk.eyJ1IjoiZnJhbmNrdCIsImEiOiJjaWpvamRoZGIwMDZidzFtMzVkMzQ5dWJ2In0.Blcw5mev30TMpmeXick_0g';
+    var currentbuilding = '';
+    var currentfloor = '';
+
+    startup();
+
+    function getQueryVariable(variable) {
+        var query = window.location.search.substring(1);
+        var vars = query.split('&');
+        for (var i = 0; i < vars.length; i++) {
+            var pair = vars[i].split('=');
+            if (decodeURIComponent(pair[0]) == variable) {
+                return decodeURIComponent(pair[1]);
+            }
+        }
+        console.log('Query variable %s not found', variable);
+    }
+
+    function startup() {
+
+        apikey = getQueryVariable('apikey');
+        venueid = getQueryVariable('venueid');
+        if (!apikey || !venueid) alert('missing parameters');
+
+        // Load geolys venue
+        loadVenue(apikey, venueid, function (err, venue) {
+
+            if (venue && venue.styles) {
+
+                // Generate floor buttons
+                var buttons = document.getElementById('buttons');
+                buttons.innerHTML = '<button id="outdoor" onclick="changefloor()">Outdoor</button>';
+                for (var i = 0; i < venue.buildings.length; i++) {
+                    var b = venue.buildings[i];
+                    for (var j = 0; j < b.floors.length; j++) {
+                        var f = b.floors[j];
+                        var btn = document.createElement('button');
+                        btn.innerHTML = (j == 0 ? b.name + " : " : "") + f.floor;
+                        btn.setAttribute('onclick', 'changefloor("' + b.id + '", "' + f.floor + '");');
+                        buttons.appendChild(btn);
+                    }
+                }
+
+                // Load venue GL style template
+                loadJSON(venue.styles + '?ts=' + new Date().getTime(), function (err, style) {
+
+                    if (style && venue.features) {
+
+                        loadJSON(venue.features + '?ts=' + new Date().getTime(), function (err, features) {
+
+                            // Change venue source to geojson
+                            delete style.sources.venue.url; // Do not use tilejson venue url
+                            style.sources.venue.type = "geojson";
+                            style.sources.venue.data = features;
+                            style.sources.venue.maxzoom = 22;
+                            style.sources.venue.tolerance = 0.001;
+                            style.sources.venue.buffer = 256;
+                            // Set urls to local server if not using mapbox source
+                            if (style.sources.composite.url.indexOf('mapbox://') == -1) {
+                                delete style.sources.composite.url; // Do not use tilejson url
+                                style.sources.composite.tiles = [baseurl + "/basemap/{z}/{x}/{y}.pbf"];
+                                style.sources.composite.maxzoom = 17;
+                                style.sources.composite.minzoom = 5;
+                            }
+                            style.sprite = style.sprite.replace("{baseurl}", baseurl);
+                            style.glyphs = style.glyphs.replace("{baseurl}", baseurl);
+
+                            // Save layers to set filter at runtime
+                            layerIds = [];
+                            for (var i = 0; i < style.layers.length; i++) {
+                                var l = style.layers[i];
+                                if (l.id.indexOf('{location}') >= 0) {
+                                    layerIds.push(l.id);
+                                    if (l.type == "symbol") {
+                                        l.layout["text-allow-overlap"] = false;
+                                        l.layout["icon-allow-overlap"] = false;
+                                    }
+                                    l.layout["visibility"] = "visible";
+                                    // Add paint style from paint location style
+                                    l.paint = l["paint.{location}"];
+                                }
+                                //condition ajouté pour v0.45
+                                if (l["source-layer"] == "OGRGeoJSON") {
+                                    delete l["source-layer"];
+                                }
+                            }
+                            mapboxgl.accessToken = MAPBOX_ACCESS_TOKEN;
+
+                            // Add map
+                            map = new mapboxgl.Map({
+                                container: 'map', // container id
+                                style: style,
+                                minZoom: 14,
+                                maxZoom: 22,
+                                center: [venue.defaultlon, venue.defaultlat], // starting position
+                                zoom: venue.defaultzoom // starting zoom
+                            });
+
+                            map.on("click", function (e) {
+
+                                reverse(e.lngLat);
+
+                            });
+
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function reverse(o) {
+
+        var url = "/api/reverse/" + venueid + "?lon=" + o.lng + "&lat=" + o.lat;
+        console.log(url);
+
+        loadJSON(url, function (code, data) {
+
+            console.log(code);
+
+            var features = [];
+            var hits = data.hits.hits;
+            for (var i = 0; i < hits.length; i++) {
+                r = hits[i];
+                console.log(r);
+
+                var feature = r._source.feature;
+                feature.properties = feature.props;
+                delete feature.props;
+                features.push(feature);
+            }
+
+            document.getElementById("panel").innerText = JSON.stringify(features, null, 2);
+
+            var featurecoll = {
+                "type": "FeatureCollection",
+                "features": features
+            };
+
+            if (!map.getSource("reversedata")) {
+                map.addSource("reversedata", {
+                    "type": "geojson",
+                    "data": featurecoll
+                });
+            }
+            else {
+                map.getSource("reversedata").setData(featurecoll);
+            }
+
+            if (!map.getLayer("reverse")) {
+                map.addLayer({
+                    "id": "reverse",
+                    "type": "fill",
+                    "source": "reversedata",
+                    "filter": ["all",
+                        [
+                            "==",
+                            "locationbuilding",
+                            "{building}"
+                        ],
+                        [
+                            "==",
+                            "locationfloor",
+                            "{floor}"
+                        ]
+                    ],
+                    "paint": {
+                        "fill-outline-color": "#ffffff",
+                        "fill-color": "#0000FF",
+                        "fill-opacity": 0.3
+                    }
+                });
+                layerIds.push("reverse");
+                applyFilters(currentbuilding, currentfloor);
+            }
+
+        });
+
+    }
+
+    function applyFilters(b, f) {
+        // Check for building / floor dependant layer
+        for (var i = 0; i < layerIds.length; i++) {
+            // Get current filter
+            var _filter = map.getFilter(layerIds[i]);
+            // Create a new filter object
+            var fs = JSON.stringify(_filter);
+            var filter = JSON.parse(fs);
+            // Change filter values to match selected building / floor
+            for (var j = 0; j < filter.length; j++) {
+                var filterpart = filter[j];
+                if (filterpart instanceof Array) {
+                    if (filterpart.length >= 2) {
+                        if (filterpart[1].indexOf('locationbuilding') >= 0) {
+                            filterpart[2] = b;
+                        }
+                        else if (filterpart[1].indexOf('locationfloor') >= 0) {
+                            filterpart[2] = f;
+                        }
+                    }
+                }
+            }
+            // Apply filter to layer
+            map.setFilter(layerIds[i], filter);
+        }
+    }
+
+    function changefloor(b, f) {
+        if (b == undefined) b = '';
+        if (f == undefined) f = '';
+        currentbuilding = b;
+        currentfloor = f;
+        applyFilters(currentbuilding, currentfloor);
+    }
+
+    function loadVenue(apikey, venueid, callback) {
+        var baseurl = "https://api.geolys.io/v1/venuesrevisions/";
+        var url = baseurl + "/" + venueid + "?api_key=" + apikey;
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onerror = function (e) {
+            callback(e);
+        };
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+                var data;
+                try {
+                    data = JSON.parse(xhr.response);
+                } catch (err) {
+                    return callback(err);
+                }
+                callback(null, data);
+            } else {
+                callback(xhr.statusText);
+            }
+        };
+        xhr.send();
+    }
+
+    function loadJSON(url, callback) {
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', url, true);
+        xhr.setRequestHeader('Accept', 'application/json');
+        xhr.onerror = function (e) {
+            callback(e);
+        };
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300 && xhr.response) {
+                var data;
+                try {
+                    data = JSON.parse(xhr.response);
+                } catch (err) {
+                    return callback(err);
+                }
+                callback(null, data);
+            } else {
+                callback(xhr.statusText);
+            }
+        };
+        xhr.send();
+    }
+
+</script>
+
+<div id="buttons"></div>
+<div id="map"></div>
+<pre id="panel"></pre>
+
+</body>
+</html>

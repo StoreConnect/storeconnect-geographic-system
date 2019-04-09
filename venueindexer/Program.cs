@@ -11,19 +11,23 @@ namespace venueindexer
         public static async Task Main(string[] args)
         {
             var host = new HostBuilder()
-                .ConfigureAppConfiguration((hostContext, configApp) => 
+                .ConfigureAppConfiguration((hostContext, configApp) =>
                 {
                     configApp.AddCommandLine(args);
                 })
                 .ConfigureServices((hostContext, services) =>
                 {
+                    services.Configure<ConsoleLifetimeOptions>(opts => opts.SuppressStatusMessages = true);
                     services.AddHttpClient<IESHttpClient, ESHttpClient>();
                     services.AddHostedService<VenueIndexerService>();
                 })
-                .UseConsoleLifetime()
                 .Build();
 
-            await host.RunAsync();
+            using (host)
+            {
+                await host.StartAsync();
+                await host.StopAsync();
+            }
         }
 
     }

@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Net.Http;
@@ -24,8 +25,7 @@ namespace venueindexer
         IESHttpClient _client;
         String _eshost;
         String _source;
-        CancellationTokenSource _cts;
-        Task _executingTask;
+        Stopwatch _stopWatch;
 
         public VenueIndexerService(IESHttpClient client, IConfiguration config)
         {
@@ -33,39 +33,66 @@ namespace venueindexer
             _client = client;
         }
 
-        public Task StartAsync(CancellationToken cancellationToken)
+        public async Task StartAsync(CancellationToken cancellationToken)
         {
             _source = _config["source"];
             _eshost = _config["eshost"];
 
             if (string.IsNullOrEmpty(_source) || string.IsNullOrEmpty(_eshost))
             {
-                Console.WriteLine("USAGE : dotnet run venueindexer.dll file.json hosturl");
+                Console.WriteLine("USAGE : dotnet venueindexer.dll source=file.json eshost=esurlwithindex");
                 Console.WriteLine("note - File must be in geojson format");
-                return Task.CompletedTask;
+                return;
             }
 
-            Console.WriteLine("Starting");
+            _stopWatch = Stopwatch.StartNew();
 
-            _cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            _executingTask = Process(_cts.Token);
+            Console.WriteLine("Creating index");
 
-            return _executingTask.IsCompleted ? _executingTask : Task.CompletedTask;
+            // Create collection
+            var resp1 = await _client.PutDocument(_eshost, "");
+
+            Console.WriteLine("Set mapping");
+
+            // Set mapping
+            JObject mapping = new JObject();
+            mapping.Add(
+                new JProperty("properties",
+                    new JObject(
+                        new JProperty("feature",
+                            new JObject(
+                                new JProperty("properties",
+                                    new JObject(
+                                        new JProperty("geometry",
+                                            new JObject(
+                                                new JProperty("type", "geo_shape")
+                                            )
+                                        ),
+                                        new JProperty("props",
+                                            new JObject(
+                                                new JProperty("type", "object")
+                                            )
+                                        )
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            );
+
+            var resp2 = await _client.PutDocument(_eshost + "/_mappings/_doc", mapping.ToString());
+
+            // Import data
+            await Process();
         }
 
         public async Task StopAsync(CancellationToken cancellationToken)
         {
-            if (_executingTask == null)
-            {
-                return;
-            }
-            _cts.Cancel();
-            cancellationToken.ThrowIfCancellationRequested();
-
-            Console.WriteLine("Finished");
+            Console.WriteLine("Finished in {0} s", _stopWatch.Elapsed.Seconds);
         }
 
-        public async Task Process(CancellationToken cancellationToken)
+        public async Task Process()
         {
             if (!File.Exists(_source))
             {
@@ -88,12 +115,6 @@ namespace venueindexer
                 index++;
 
                 Console.WriteLine(index + " / " + features.Count);
-
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    Console.WriteLine("Execution cancelled");
-                    break;
-                }
 
                 String id = (String)feature["id"];
 
