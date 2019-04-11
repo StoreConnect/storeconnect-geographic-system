@@ -25,6 +25,8 @@ namespace geoapi.Controllers
         {
             string url = "http://elasticsearch:9200/venue_" + venueid + "/_search?size=100";
 
+            Console.WriteLine(url);
+
             JArray coords = new JArray();
             coords.Add(lon);
             coords.Add(lat);
