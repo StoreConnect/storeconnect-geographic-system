@@ -23,7 +23,7 @@ namespace geoapi.Controllers
         [HttpGet("{venueid}")]
         public async Task<ContentResult> Get(int venueid, double lon, double lat, string locationbuilding = "_", string locationfloor = "_")
         {
-            string url = "http://geoapi_elasticsearch:9200/venue_" + venueid + "/_search?size=100";
+            string url = "http://elasticsearch:9200/venue_" + venueid + "/_search?size=100";
 
             JArray coords = new JArray();
             coords.Add(lon);
