@@ -7,8 +7,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "venueindexer", "venueindexe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "geoapi", "geoapi\geoapi.csproj", "{A5EE4F02-5D95-4F62-8C2D-BB6A2FCEDC8F}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "venueindexer.tests", "venueindexer.tests\venueindexer.tests.csproj", "{62D70944-EFC7-44DD-997D-B7757F6CD844}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dashboard", "dashboard\dashboard.csproj", "{FCEB232B-CF4C-4E7E-93AB-36CF56DF3985}"
 EndProject
 Global
@@ -25,10 +23,6 @@ Global
 		{A5EE4F02-5D95-4F62-8C2D-BB6A2FCEDC8F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A5EE4F02-5D95-4F62-8C2D-BB6A2FCEDC8F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A5EE4F02-5D95-4F62-8C2D-BB6A2FCEDC8F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{62D70944-EFC7-44DD-997D-B7757F6CD844}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{62D70944-EFC7-44DD-997D-B7757F6CD844}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{62D70944-EFC7-44DD-997D-B7757F6CD844}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{62D70944-EFC7-44DD-997D-B7757F6CD844}.Release|Any CPU.Build.0 = Release|Any CPU
 		{FCEB232B-CF4C-4E7E-93AB-36CF56DF3985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FCEB232B-CF4C-4E7E-93AB-36CF56DF3985}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{FCEB232B-CF4C-4E7E-93AB-36CF56DF3985}.Release|Any CPU.ActiveCfg = Release|Any CPU
