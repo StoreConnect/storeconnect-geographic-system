@@ -63,8 +63,7 @@ namespace geoapi
             app.UseStaticFiles(new StaticFileOptions
             {
                 ContentTypeProvider = provider
-            });     
-            app.UseHttpsRedirection();
+            });
             app.UseMvc();
         }
     }
